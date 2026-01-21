@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Award, RotateCcw, Scan, Shield, Zap } from "lucide-react";
+import { useLocation } from "wouter";
 import heroShoe from "../assets/hero_luxury_sneaker_spotlight.png";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -14,8 +15,10 @@ const floatingParticles = Array.from({ length: 20 }, (_, i) => ({
 }));
 
 export default function HeroSection() {
+  // Inside HeroSection:
+const [, setLocation] = useLocation()
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background pt-20">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-background pt-16">
       <div className="absolute inset-0 overflow-hidden">
         <motion.div 
           className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px]"
@@ -182,6 +185,7 @@ export default function HeroSection() {
                   size="lg"
                   variant="outline"
                   className="border-primary/50 text-foreground hover:bg-primary/10 rounded-full px-8 gap-2 backdrop-blur-sm"
+                  onClick={() => setLocation("/shop")}
                 >
                   Shop Collection
                   <motion.span

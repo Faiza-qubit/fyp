@@ -12,9 +12,10 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, ".env") });
 
 // Import routes AFTER dotenv is configured
+import authRoutes from "./routes/authRoutes.js"; // ✅ Import auth routes
+import feedbackRoutes from "./routes/feedbackRoutes.js"; // ✅ Import feedback routes
 import paymentRoutes from "./routes/PaymentRoutes.js";
 import shoeRoutes from "./routes/ShoeRoutes.js";
-import authRoutes from "./routes/authRoutes.js"; // ✅ Import auth routes
 
 const app = express();
 
@@ -26,7 +27,8 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // Routes
 app.use("/api/shoes", shoeRoutes);
 app.use("/api/payments", paymentRoutes);
-app.use("/api", authRoutes); // ✅ Add auth routes
+app.use("/api", authRoutes);
+app.use("/api/feedback", feedbackRoutes); // ✅ Add feedback routes
 
 // Optional: Test route to verify token
 // import { protect } from "./middleware/authMiddleware.js";

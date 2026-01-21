@@ -1,22 +1,26 @@
-import { useState } from "react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Textarea } from "../components/ui/textarea";
-import { Card } from "../components/ui/card";
-import { Label } from "../components/ui/label";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MessageSquare, Send, Star, Check, Sparkles } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import axios from "axios";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, MessageSquare, Send, Sparkles, Star } from "lucide-react";
+import { useState } from "react";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
 
 const ratingLabels = ["Poor", "Fair", "Good", "Great", "Excellent"];
+const API_BASE_URL = "http://localhost:5000/api";
+
 
 export default function FeedbackForm() {
+  const [error, setError] = useState(""); // <-- Add this line
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [category, setCategory] = useState("");
@@ -26,18 +30,43 @@ export default function FeedbackForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!name || !email || !category || !rating || !message) return;
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
 
-    setIsSubmitting(true);
-    // todo: remove mock functionality - connect to actual feedback API
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSubmitted(true);
-      console.log("Feedback submitted:", { name, email, category, rating, message });
-    }, 1500);
-  };
+  const userId = localStorage.getItem("userId"); // <-- get userId
+
+  if (!userId || !name || !email || !category || !rating || !message) {
+    setError("Please fill all fields");
+    return;
+  }
+
+  console.log("submitting feedback");
+  setIsSubmitting(true);
+  console.log(userId, name, email, category, rating, message);
+
+  try {
+    console.log("sending to backend");
+    const response = await axios.post(`${API_BASE_URL}/feedback`, {
+      userId,  // <-- include userId
+      name,
+      email,
+      category,
+      rating,
+      message
+    });
+
+    console.log("Feedback submitted:", response.data);
+    setIsSubmitted(true);
+    resetForm();
+  } catch (err) {
+    console.error("Error submitting feedback:", err);
+    setError(err.response?.data?.message || "Failed to submit feedback");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   const resetForm = () => {
     setName("");
@@ -46,6 +75,7 @@ export default function FeedbackForm() {
     setRating(0);
     setMessage("");
     setIsSubmitted(false);
+    setError("");
   };
 
   return (

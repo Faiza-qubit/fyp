@@ -35,15 +35,21 @@ export default function Login({ setIsLoggedIn }) {
         endpoint,
         isSignUp ? { name, email, password } : { email, password }
       );
+    console.log("Response data:", response.data);
 
-      const { token } = response.data;
-      if (!token) throw new Error("No token received from backend");
+const { token } = response.data;
+const userId = response.data.user.id; // <-- directly assign it
+if (!token) throw new Error("No token received from backend");
 
-      // Save token in localStorage
-      localStorage.setItem("token", token);
+console.log("userId:", userId);
 
-      // ✅ Update login state in App
-      if (setIsLoggedIn) setIsLoggedIn(true);
+// Save to localStorage
+localStorage.setItem("token", token);
+localStorage.setItem("userId", userId);
+
+// Update login state
+if (setIsLoggedIn) setIsLoggedIn(true);
+
 
       // Redirect to Shop page
       setLocation("/shop");
