@@ -2,9 +2,18 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
-import shoeRoutes from "./routes/ShoeRoutes.js";
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
-dotenv.config(); // load .env
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load .env FIRST, before importing other modules
+dotenv.config({ path: join(__dirname, '.env') });
+
+// Import routes AFTER dotenv is configured
+import shoeRoutes from "./routes/ShoeRoutes.js";
+import paymentRoutes from "./routes/PaymentRoutes.js";
 
 const app = express();
 
@@ -15,11 +24,17 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Routes
 app.use("/api/shoes", shoeRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // Connect MongoDB
 mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("MongoDB connected"))
-.catch((err) => console.error("MongoDB connection error:", err));
+  .then(() => {
+    console.log("✅ MongoDB connected successfully");
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection error:", err.message);
+    console.error("Full error:", err);
+  });
 
 // Start server
 const PORT = process.env.PORT || 5000;

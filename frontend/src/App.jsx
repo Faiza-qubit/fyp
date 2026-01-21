@@ -11,6 +11,7 @@ import AdminLogin from "../src/pages/AdminLogin";   // ✅ Added
 import NotFound from "../src/pages/not-found";
 import Shop from "../src/pages/Shop";
 import ProductDetails from "../src/pages/ProductDetails";
+import Payment from "../src/pages/Payment";
 import Admin from "../src/pages/Admin";
 import StockAnalysis from "../src/pages/StockAnalysis";  // ✅ New page
 
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/shop" component={Shop} />
       <Route path="/product/:id" component={ProductDetails} />
+      <Route path="/payment" component={Payment} />
       <Route path="/login" component={Login} />
 
       {/* Admin Login BEFORE Admin */}

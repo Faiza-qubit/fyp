@@ -164,12 +164,14 @@ export default function ProductDetails() {
             {/* BUTTONS */}
             <div className="flex gap-4 mt-auto">
               {/* Add to Cart */}
-              <Button
-                size="lg"
-                className="flex-1 h-14 text-base font-bold bg-yellow-500 text-black hover:bg-yellow-600 rounded-xl"
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" /> Add to Cart
-              </Button>
+              <Link href="/payment" className="flex-1">
+                <Button
+                  size="lg"
+                  className="w-full h-14 text-base font-bold bg-yellow-500 text-black hover:bg-yellow-600 rounded-xl"
+                >
+                  <ShoppingCart className="w-5 h-5 mr-2" /> Add to Cart
+                </Button>
+              </Link>
 
               {/* Try On AR */}
               {shoe.arEnabled && (
