@@ -1,38 +1,39 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
+import { useState, useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { Route, Switch } from "wouter";
+import ProtectedRoute from "../src/components/ProtectedRoute";
 import { Toaster } from "../src/components/ui/toaster";
 import { TooltipProvider } from "../src/components/ui/tooltip";
+import { queryClient } from "./lib/queryClient";
 
 // Pages
+import Admin from "../src/pages/Admin";
+import AdminLogin from "../src/pages/AdminLogin";
 import Home from "../src/pages/Home";
 import Login from "../src/pages/Login";
-import AdminLogin from "../src/pages/AdminLogin";   // ✅ Added
 import NotFound from "../src/pages/not-found";
-import Shop from "../src/pages/Shop";
-import ProductDetails from "../src/pages/ProductDetails";
 import Payment from "../src/pages/Payment";
-import Admin from "../src/pages/Admin";
-import StockAnalysis from "../src/pages/StockAnalysis";  // ✅ New page
-
+import ProductDetails from "../src/pages/ProductDetails";
+import Shop from "../src/pages/Shop";
+import StockAnalysis from "../src/pages/StockAnalysis";
 
 // Layout
-import Navigation from "./components/Navigation";
 import Footer from "./components/Footer";
+import Navigation from "./components/Navigation";
 
-function Router() {
+function Router({ isLoggedIn, setIsLoggedIn }) {
   return (
     <Switch>
       {/* Public Routes */}
       <Route path="/" component={Home} />
-      <Route path="/shop" component={Shop} />
-      <Route path="/product/:id" component={ProductDetails} />
+      <ProtectedRoute path="/shop" component={Shop} isLoggedIn={isLoggedIn} />
+      <ProtectedRoute path="/product/:id" component={ProductDetails} isLoggedIn={isLoggedIn} />
       <Route path="/payment" component={Payment} />
-      <Route path="/login" component={Login} />
+      <Route path="/login" component={() => <Login setIsLoggedIn={setIsLoggedIn} />} />
 
-      {/* Admin Login BEFORE Admin */}
-      <Route path="/admin-login" component={AdminLogin} />   {/* ✅ NEW */}
-      <Route path="/admin" component={Admin} />              {/* Admin page */}
+      {/* Admin */}
+      <Route path="/admin-login" component={AdminLogin} />
+      <Route path="/admin" component={Admin} />
       <Route path="/stock-analysis" component={StockAnalysis} />
 
       {/* 404 */}
@@ -42,20 +43,30 @@ function Router() {
 }
 
 function App() {
+  // ✅ Track login state dynamically
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
+
+  // Optional: listen to changes in localStorage (multi-tab support)
+  useEffect(() => {
+    const handleStorage = () => setIsLoggedIn(!!localStorage.getItem("token"));
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
 
-        {/* Navigation always visible */}
+        {/* Navigation */}
         <Navigation />
 
-        {/* Main content */}
+        {/* Main */}
         <main className="min-h-screen bg-background text-foreground pt-20">
-          <Router />
+          <Router isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
         </main>
 
-        {/* Footer always visible */}
+        {/* Footer */}
         <Footer />
       </TooltipProvider>
     </QueryClientProvider>
