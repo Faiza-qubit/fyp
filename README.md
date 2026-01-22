@@ -46,7 +46,7 @@ The system allows users to measure their foot using a camera, visualize shoes vi
 ### Payments & External APIs
 - **Stripe Payment Gateway** 
 
-### Tools & Platforms
+### Platforms
 - Git & GitHub
 - VS Code
 - Postman
