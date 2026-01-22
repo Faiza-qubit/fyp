@@ -64,7 +64,7 @@ SizeWise is an AI-powered e-commerce web application that addresses the problem 
 ---
 
 ### NFR-2 Performance
-- The system shall respond to user requests within acceptable time limits.
+- The system shall respond to the user requests within acceptable time limits.
 - API responses shall be optimized for normal user load.
 
 ---
