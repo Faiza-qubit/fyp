@@ -12,3 +12,12 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local
+
+venv/
+__pycache__/
+*.pyc
+.env
+ngrok*
+.ipynb_checkpoints
+foot_dataset/.ipynb_checkpoints
+runs/
