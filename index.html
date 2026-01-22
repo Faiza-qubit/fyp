@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Foot Measurement</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+
+  <script src="https://docs.opencv.org/4.x/opencv.js"></script>
+</head>
+
+<body>
+
+<h2>Foot Size Measurement</h2>
+
+<div class="container">
+  <video id="video" autoplay muted playsinline></video>
+  <canvas id="canvas"></canvas>
+
+  <button id="startBtn">Start Camera</button>
+  <button id="captureBtn">Capture & Measure</button>
+
+  <div id="result"></div>
+
+  <!-- 🔴 DEBUG PANEL (VERY IMPORTANT) -->
+  <div id="debug" style="
+    margin-top:10px;
+    padding:10px;
+    background:#000;
+    color:#0f0;
+    font-size:12px;
+    text-align:left;
+    max-height:200px;
+    overflow:auto;
+  ">
+    DEBUG LOG:
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
