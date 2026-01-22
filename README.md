@@ -1,6 +1,5 @@
 # 👟 SizeWise – AI-Based Foot Measurement & Virtual Try-On System
 ---
-
 ## 📌Project Overview
 SizeWise is an AI-powered e-commerce web application designed to improve online shoe shopping by addressing the common issue of incorrect shoe sizing. The system integrates **computer vision**, **machine learning**, and **web technologies** to provide accurate foot measurement, virtual try-on, and intelligent shoe size recommendations, along with complete e-commerce functionality.
 

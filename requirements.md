@@ -3,7 +3,6 @@
 SizeWise is an AI-powered e-commerce web application that addresses the problem of incorrect shoe sizing in online shopping. The project defines requirements for integrating computer vision, machine learning, and modern web technologies to support accurate foot measurement, virtual try-on functionality, intelligent shoe size recommendations, and standard e-commerce operations within a single system.
 
 ---
-
 ## ⚙️ Functional Requirements
 
 ### FR-1 User Registration & Authentication
@@ -65,7 +64,7 @@ SizeWise is an AI-powered e-commerce web application that addresses the problem 
 ---
 
 ### NFR-2 Performance
-- The system shall respond to user requests within acceptable time limits.
+- The system shall respond to the user requests within acceptable time limits.
 - API responses shall be optimized for normal user load.
 
 ---
