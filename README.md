@@ -143,7 +143,7 @@ npm run dev
 </div>
 
 ## 📄License
-This project is licensed under the **MIT License**.
+The project is licensed under the [MIT License](LICENSE).
 
 ---
 
