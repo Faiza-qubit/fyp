@@ -2,178 +2,335 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-const INFER_URL = "https://unsalutary-ariya-subgerminally.ngrok-free.dev/infer";
+/* ================= BACKEND ================= */
+const INFER_URL = "http://192.168.100.34:8000/infer";
 
 export default function FootTryOn() {
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const threeCanvasRef = useRef(null);
-  const statusRef = useRef(null);
-  const lastGoodFeet = useRef([null, null]);
-  const shoeModels = useRef([null, null]);
 
-  useEffect(() => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+const videoRef = useRef(null);
+const canvasRef = useRef(null);
+const threeCanvasRef = useRef(null);
+const statusRef = useRef(null);
 
-    /* ================= THREE SETUP ================= */
-    const scene = new THREE.Scene();
-    const camera3D = new THREE.PerspectiveCamera(45, 1, 0.1, 3000);
-    camera3D.position.set(0, 0, 1000); // Fixed depth for stable projection
+/* ================= TRACK MEMORY ================= */
+/* Snapchat-style temporal tracker */
 
-    const renderer = new THREE.WebGLRenderer({
-      canvas: threeCanvasRef.current,
-      alpha: true,
-      antialias: true
-    });
-    renderer.setPixelRatio(window.devicePixelRatio);
+const tracks = useRef([
+  { pos:new THREE.Vector3(), scale:1, rot:0, lastSeen:0 },
+  { pos:new THREE.Vector3(), scale:1, rot:0, lastSeen:0 }
+]);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-    const dir = new THREE.DirectionalLight(0xffffff, 1);
-    dir.position.set(0, 1000, 1000);
-    scene.add(dir);
+const shoes = useRef([null,null]);
 
-    /* ================= LOAD SHOES ================= */
-    const loader = new GLTFLoader();
-    for (let i = 0; i < 2; i++) {
-      loader.load("/winter_shoe.glb", gltf => {
-        const shoe = gltf.scene;
-        const box = new THREE.Box3().setFromObject(shoe);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
+/* ================================================= */
 
-        // Pivot = Bottom-center of the sole
-        shoe.position.sub(center);
-        shoe.position.y += size.y / 2;
+useEffect(()=>{
 
-        const wrapper = new THREE.Group();
-        wrapper.add(shoe);
-        wrapper.visible = false;
-        shoeModels.current[i] = wrapper;
-        scene.add(wrapper);
-      });
-    }
+const video = videoRef.current;
+const canvas = canvasRef.current;
+const ctx = canvas.getContext("2d");
 
-    /* ================= COORDINATE MAPPING (THE FIX) ================= */
-    function getWorldPosFromPixels(x, y) {
-      // 1. Get the actual rendered size of the video on screen
-      const rect = video.getBoundingClientRect();
-      
-      // 2. Map pixel coordinates (0 to Width) to NDC (-1 to +1)
-      const nx = (x / video.videoWidth) * 2 - 1;
-      const ny = -(y / video.videoHeight) * 2 + 1;
+/* ================= THREE ================= */
 
-      // 3. Unproject using a fixed depth (matching camera.z)
-      const vec = new THREE.Vector3(nx, ny, 0.5).unproject(camera3D);
-      const dir = vec.sub(camera3D.position).normalize();
-      const distance = 1000; // Match camera3D.position.z
-      return camera3D.position.clone().add(dir.multiplyScalar(distance));
-    }
+const scene = new THREE.Scene();
 
-    function mapFootTo3D(det, shoe) {
-      if (!det || !shoe || det.keypoints.length < 2) return;
-      shoe.visible = true;
+const camera = new THREE.PerspectiveCamera(
+60,1,0.1,3000
+);
+camera.position.z = 1000;
 
-      // Swap logic: Usually KP[0] is ankle, KP[last] is toes
-      const ankle = det.keypoints[0];
-      const toe = det.keypoints[det.keypoints.length - 1];
+const renderer = new THREE.WebGLRenderer({
+canvas:threeCanvasRef.current,
+alpha:true,
+antialias:true
+});
 
-      /* ---------- POSITIONING ---------- */
-      // Project the shoe forward from the ankle towards the toes
-      const cx = ankle[0] + (toe[0] - ankle[0]) * 1.5; 
-      const cy = ankle[1] + (toe[1] - ankle[1]) * 1.5;
+renderer.setPixelRatio(window.devicePixelRatio);
 
-      const targetPos = getWorldPosFromPixels(cx, cy);
-      shoe.position.lerp(targetPos, 0.5);
+scene.add(new THREE.AmbientLight(0xffffff,1.8));
 
-      /* ---------- ROTATION ---------- */
-      // Reset rotations to prevent the "tumbling" seen in pic 9
-      shoe.rotation.set(0, 0, 0);
+const light=new THREE.DirectionalLight(0xffffff,1);
+light.position.set(0,1000,1000);
+scene.add(light);
 
-      // Angle of the foot on the 2D plane
-      const angle2D = Math.atan2(toe[0] - ankle[0], toe[1] - ankle[1]);
-      shoe.rotation.y = angle2D; // Rotate around vertical axis
-      
-      // Flip laces up (fix inversion)
-      shoe.rotation.x = Math.PI; 
-      // Tilt nose down to match perspective
-      shoe.rotateX(Math.PI / 8);
+/* ================= LOAD SHOES ================= */
 
-      /* ---------- SCALE ---------- */
-      const footLen = Math.hypot(toe[0] - ankle[0], toe[1] - ankle[1]);
-      // Fixed scaling factor based on camera distance (1000)
-      const scale = footLen / 350; 
-      shoe.scale.setScalar(scale);
-    }
+const loader=new GLTFLoader();
 
-    /* ================= CAMERA & LOOP ================= */
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-      .then(stream => {
-        video.srcObject = stream;
-        video.onloadedmetadata = () => video.play();
-        statusRef.current.innerText = "Camera ready";
-      })
-      .catch(() => (statusRef.current.innerText = "Camera error"));
+for(let i=0;i<2;i++){
 
-    let lastInfer = 0;
-    async function loop() {
-      if (!video.videoWidth) {
-        requestAnimationFrame(loop);
-        return;
-      }
+loader.load("/winter_shoe.glb",(gltf)=>{
 
-      // Sync canvas resolution to video source exactly
-      if (canvas.width !== video.videoWidth) {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        renderer.setSize(video.videoWidth, video.videoHeight, false);
-        camera3D.aspect = video.videoWidth / video.videoHeight;
-        camera3D.updateProjectionMatrix();
-      }
+const shoe=gltf.scene;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(video, 0, 0);
+/* ✅ FIX PIVOT (HEEL BASE) */
+const box=new THREE.Box3().setFromObject(shoe);
+const center=box.getCenter(new THREE.Vector3());
+shoe.position.sub(center);
 
-      const now = performance.now();
-      if (now - lastInfer > 120) {
-        lastInfer = now;
-        canvas.toBlob(async blob => {
-          try {
-            const form = new FormData();
-            form.append("file", blob);
-            const res = await fetch(INFER_URL, { method: "POST", body: form });
-            const data = await res.json();
-            lastGoodFeet.current = data.detections
-              .filter(d => d.confidence > 0.6)
-              .slice(0, 2);
-          } catch {}
-        }, "image/jpeg", 0.6);
-      }
+const wrap=new THREE.Group();
+wrap.add(shoe);
+wrap.visible=false;
 
-      lastGoodFeet.current.forEach((det, i) => {
-        if (shoeModels.current[i]) mapFootTo3D(det, shoeModels.current[i]);
-      });
+scene.add(wrap);
+shoes.current[i]=wrap;
 
-      renderer.render(scene, camera3D);
-      requestAnimationFrame(loop);
-    }
+});
+}
 
-    loop();
-  }, []);
+/* ================= PIXEL → WORLD ================= */
 
-  return (
-    <div style={{ background: "#000", color: "#fff", textAlign: "center", minHeight: "100vh" }}>
-      <h3 style={{ padding: "10px" }}>AR Foot Try-On (Alignment Fixed)</h3>
-      <p ref={statusRef}>Initializing…</p>
+function worldFromPixel(x,y){
 
-      <div style={{ position: "relative", width: "100%", maxWidth: "500px", margin: "auto", overflow: "hidden" }}>
-        <video ref={videoRef} muted playsInline style={{ width: "100%", display: "block" }} />
-        {/* Transparent Canvas for Three.js Overlay */}
-        <canvas ref={threeCanvasRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
-        {/* Canvas used for inference only (hidden) */}
-        <canvas ref={canvasRef} style={{ display: "none" }} />
-      </div>
-    </div>
-  );
+const nx=(x/video.videoWidth)*2-1;
+const ny=-(y/video.videoHeight)*2+1;
+
+const vec=new THREE.Vector3(nx,ny,0.5)
+.unproject(camera);
+
+const dir=vec.sub(camera.position)
+.normalize();
+
+return camera.position
+.clone()
+.add(dir.multiplyScalar(1000));
+}
+
+/* ================= SNAPCHAT TRACK UPDATE ================= */
+
+function updateTrack(det,id){
+
+const state=tracks.current[id];
+
+const [x1,y1,x2,y2]=det.bbox;
+
+const cx=(x1+x2)/2;
+const cy=(y1+y2)/2;
+
+const world=worldFromPixel(cx,cy);
+
+/* ✅ POSITION SMOOTH */
+state.pos.lerp(world,0.15);
+
+/* ✅ SCALE FROM BBOX */
+const width=x2-x1;
+const targetScale=width/220;
+
+state.scale=
+THREE.MathUtils.lerp(
+state.scale,
+targetScale,
+0.12
+);
+
+/* ✅ ROTATION FROM KEYPOINTS */
+if(det.keypoints?.length>=2){
+
+const ankle=det.keypoints[0];
+const toe=det.keypoints.at(-1);
+
+const dx=toe[0]-ankle[0];
+const dy=toe[1]-ankle[1];
+
+const angle=Math.atan2(dy,dx);
+
+state.rot=
+THREE.MathUtils.lerp(
+state.rot,
+angle,
+0.15
+);
+}
+
+state.lastSeen=performance.now();
+}
+
+/* ================= APPLY LOCKED SHOE ================= */
+
+function applyShoe(id){
+
+const shoe=shoes.current[id];
+const state=tracks.current[id];
+
+if(!shoe) return;
+
+/* keep alive */
+if(performance.now()-state.lastSeen>1200){
+shoe.visible=false;
+return;
+}
+
+shoe.visible=true;
+
+shoe.position.copy(state.pos);
+
+/* ✅ CORRECT ORIENTATION */
+shoe.rotation.set(
+-Math.PI/2,
+-state.rot,
+Math.PI
+);
+
+shoe.scale.setScalar(state.scale);
+}
+
+/* ================= DRAW BLACK BOX ================= */
+
+function drawBoxes(dets){
+
+ctx.strokeStyle="black";
+ctx.lineWidth=5;
+
+dets.forEach(det=>{
+const[x1,y1,x2,y2]=det.bbox;
+ctx.strokeRect(x1,y1,x2-x1,y2-y1);
+});
+}
+
+/* ================= CAMERA ================= */
+
+navigator.mediaDevices.getUserMedia({
+video:{facingMode:"environment"}
+})
+.then(stream=>{
+video.srcObject=stream;
+video.onloadedmetadata=()=>video.play();
+statusRef.current.innerText="Camera ready";
+});
+
+/* ================= MAIN LOOP ================= */
+
+let busy=false;
+let lastInfer=0;
+
+async function loop(){
+
+if(!video.videoWidth){
+requestAnimationFrame(loop);
+return;
+}
+
+/* resize */
+canvas.width=video.videoWidth;
+canvas.height=video.videoHeight;
+
+renderer.setSize(
+video.videoWidth,
+video.videoHeight,
+false
+);
+
+camera.aspect=
+video.videoWidth/video.videoHeight;
+camera.updateProjectionMatrix();
+
+/* draw camera */
+ctx.drawImage(video,0,0);
+
+const now=performance.now();
+
+/* ✅ slower inference = stable AR */
+if(!busy && now-lastInfer>350){
+
+busy=true;
+lastInfer=now;
+
+canvas.toBlob(async(blob)=>{
+
+try{
+
+const form=new FormData();
+form.append("file",blob);
+
+const res=await fetch(
+INFER_URL,
+{method:"POST",body:form}
+);
+
+const data=await res.json();
+
+let dets=(data.detections||[])
+.filter(d=>d.confidence>0.6);
+
+/* LEFT → RIGHT FOOT LOCK */
+dets.sort(
+(a,b)=>
+(a.bbox[0]+a.bbox[2])-
+(b.bbox[0]+b.bbox[2])
+);
+
+dets=dets.slice(0,2);
+
+drawBoxes(dets);
+
+dets.forEach(
+(det,i)=>updateTrack(det,i)
+);
+
+}catch{}
+
+busy=false;
+
+},"image/jpeg",0.6);
+}
+
+/* APPLY STABLE SHOES */
+applyShoe(0);
+applyShoe(1);
+
+renderer.render(scene,camera);
+
+requestAnimationFrame(loop);
+}
+
+loop();
+
+},[]);
+
+/* ================= UI ================= */
+
+return(
+<div style={{
+background:"#000",
+color:"#fff",
+textAlign:"center",
+minHeight:"100vh"
+}}>
+
+<h2>AR Foot Try-On PRO</h2>
+<p ref={statusRef}>Initializing…</p>
+
+<div style={{
+position:"relative",
+maxWidth:"500px",
+margin:"auto"
+}}>
+
+<video
+ref={videoRef}
+muted
+playsInline
+style={{width:"100%"}}
+/>
+
+<canvas
+ref={threeCanvasRef}
+style={{
+position:"absolute",
+top:0,
+left:0,
+width:"100%",
+height:"100%",
+pointerEvents:"none"
+}}
+/>
+
+<canvas
+ref={canvasRef}
+style={{display:"none"}}
+/>
+
+</div>
+</div>
+);
 }
