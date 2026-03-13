@@ -13,7 +13,6 @@ const threeCanvasRef = useRef(null);
 const statusRef = useRef(null);
 
 /* ================= TRACK MEMORY ================= */
-/* Snapchat-style temporal tracker */
 
 const tracks = useRef([
   { pos:new THREE.Vector3(), scale:1, rot:0, lastSeen:0 },
@@ -21,8 +20,6 @@ const tracks = useRef([
 ]);
 
 const shoes = useRef([null,null]);
-
-/* ================================================= */
 
 useEffect(()=>{
 
@@ -63,7 +60,7 @@ loader.load("/winter_shoe.glb",(gltf)=>{
 
 const shoe=gltf.scene;
 
-/* ✅ FIX PIVOT (HEEL BASE) */
+/* FIX PIVOT */
 const box=new THREE.Box3().setFromObject(shoe);
 const center=box.getCenter(new THREE.Vector3());
 shoe.position.sub(center);
@@ -96,7 +93,7 @@ return camera.position
 .add(dir.multiplyScalar(1000));
 }
 
-/* ================= SNAPCHAT TRACK UPDATE ================= */
+/* ================= TRACK UPDATE ================= */
 
 function updateTrack(det,id){
 
@@ -109,10 +106,12 @@ const cy=(y1+y2)/2;
 
 const world=worldFromPixel(cx,cy);
 
-/* ✅ POSITION SMOOTH */
+/* POSITION SMOOTH */
+
 state.pos.lerp(world,0.15);
 
-/* ✅ SCALE FROM BBOX */
+/* SCALE FROM BBOX */
+
 const width=x2-x1;
 const targetScale=width/220;
 
@@ -123,7 +122,8 @@ targetScale,
 0.12
 );
 
-/* ✅ ROTATION FROM KEYPOINTS */
+/* ROTATION FROM KEYPOINTS */
+
 if(det.keypoints?.length>=2){
 
 const ankle=det.keypoints[0];
@@ -145,17 +145,18 @@ angle,
 state.lastSeen=performance.now();
 }
 
-/* ================= APPLY LOCKED SHOE ================= */
+/* ================= APPLY SHOE ================= */
 
 function applyShoe(id){
 
-const shoe=shoes.current[id];
-const state=tracks.current[id];
+const shoe = shoes.current[id];
+const state = tracks.current[id];
 
 if(!shoe) return;
 
-/* keep alive */
-if(performance.now()-state.lastSeen>1200){
+/* increased timeout */
+
+if(performance.now() - state.lastSeen > 2000){
 shoe.visible=false;
 return;
 }
@@ -164,17 +165,37 @@ shoe.visible=true;
 
 shoe.position.copy(state.pos);
 
-/* ✅ CORRECT ORIENTATION */
+/* RIGHT FOOT */
+
+if(id===1){
+
 shoe.rotation.set(
--Math.PI/2,
--state.rot,
-Math.PI
+ -Math.PI/2,
+ -state.rot,
+ Math.PI
 );
 
 shoe.scale.setScalar(state.scale);
+
 }
 
-/* ================= DRAW BLACK BOX ================= */
+/* LEFT FOOT */
+
+else{
+
+shoe.rotation.set(
+ -Math.PI/2,
+ -state.rot + Math.PI,
+ Math.PI
+);
+
+shoe.scale.setScalar(state.scale);
+
+}
+
+}
+
+/* ================= DRAW BOXES ================= */
 
 function drawBoxes(dets){
 
@@ -211,6 +232,7 @@ return;
 }
 
 /* resize */
+
 canvas.width=video.videoWidth;
 canvas.height=video.videoHeight;
 
@@ -222,14 +244,17 @@ false
 
 camera.aspect=
 video.videoWidth/video.videoHeight;
+
 camera.updateProjectionMatrix();
 
 /* draw camera */
+
 ctx.drawImage(video,0,0);
 
 const now=performance.now();
 
-/* ✅ slower inference = stable AR */
+/* YOLO inference */
+
 if(!busy && now-lastInfer>350){
 
 busy=true;
@@ -252,7 +277,8 @@ const data=await res.json();
 let dets=(data.detections||[])
 .filter(d=>d.confidence>0.6);
 
-/* LEFT → RIGHT FOOT LOCK */
+/* SORT LEFT → RIGHT */
+
 dets.sort(
 (a,b)=>
 (a.bbox[0]+a.bbox[2])-
@@ -263,9 +289,20 @@ dets=dets.slice(0,2);
 
 drawBoxes(dets);
 
-dets.forEach(
-(det,i)=>updateTrack(det,i)
-);
+/* FIXED TRACK ASSIGNMENT */
+
+if(dets.length===1){
+
+updateTrack(dets[0],0);
+
+}
+
+if(dets.length===2){
+
+updateTrack(dets[0],0); // left foot
+updateTrack(dets[1],1); // right foot
+
+}
 
 }catch{}
 
@@ -274,7 +311,8 @@ busy=false;
 },"image/jpeg",0.6);
 }
 
-/* APPLY STABLE SHOES */
+/* APPLY SHOES */
+
 applyShoe(0);
 applyShoe(1);
 
@@ -297,7 +335,7 @@ textAlign:"center",
 minHeight:"100vh"
 }}>
 
-<h2>AR Foot Try-On PRO</h2>
+<h2>AR Foot Try-On PRO max</h2>
 <p ref={statusRef}>Initializing…</p>
 
 <div style={{
