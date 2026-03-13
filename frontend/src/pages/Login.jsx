@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { useEffect } from "react";
 
 const API_BASE_URL = "http://localhost:5000/api"; // Update to your backend URL
 
@@ -18,8 +19,15 @@ export default function Login({ setIsLoggedIn }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState("");
-
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      setLocation("/shop"); // already logged in → go shop
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,37 +36,38 @@ export default function Login({ setIsLoggedIn }) {
 
     try {
       // Determine backend endpoint
-      const endpoint = isSignUp ? `${API_BASE_URL}/signup` : `${API_BASE_URL}/login`;
+      const endpoint = isSignUp
+        ? `${API_BASE_URL}/signup`
+        : `${API_BASE_URL}/login`;
 
       // Send request to backend
       const response = await axios.post(
         endpoint,
-        isSignUp ? { name, email, password } : { email, password }
+        isSignUp ? { name, email, password } : { email, password },
       );
-    console.log("Response data:", response.data);
+      console.log("Response data:", response.data);
 
-const { token } = response.data;
-const userId = response.data.user.id; // <-- directly assign it
-if (!token) throw new Error("No token received from backend");
+      const { token } = response.data;
+      const userId = response.data.user.id; // <-- directly assign it
+      if (!token) throw new Error("No token received from backend");
 
-console.log("userId:", userId);
+      // SAVE AUTH DATA
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
 
-// Save to localStorage
-localStorage.setItem("token", token);
-localStorage.setItem("userId", userId);
+      // UPDATE LOGIN STATE
+      if (setIsLoggedIn) setIsLoggedIn(true);
 
-// Update login state
-if (setIsLoggedIn) setIsLoggedIn(true);
-
-
-      // Redirect to Shop page
+      // REDIRECT TO SHOP
       setLocation("/shop");
     } catch (err) {
-      console.error("Login/Signup error:", err);
+      console.error("Auth error:", err);
 
-      // Axios errors
-      if (err.response?.data?.message) setError(err.response.data.message);
-      else setError(err.message || "Something went wrong");
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else {
+        setError("Something went wrong");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -107,7 +116,9 @@ if (setIsLoggedIn) setIsLoggedIn(true);
               {isSignUp ? "Create Account" : "Welcome Back"}
             </h1>
             <p className="text-muted-foreground">
-              {isSignUp ? "Sign up to start shopping" : "Sign in to access Quick Add features"}
+              {isSignUp
+                ? "Sign up to start shopping"
+                : "Sign in to access Quick Add features"}
             </p>
             {error && <p className="text-red-500 mt-2">{error}</p>}
           </div>
@@ -115,7 +126,9 @@ if (setIsLoggedIn) setIsLoggedIn(true);
           <form onSubmit={handleSubmit} className="space-y-5">
             {isSignUp && (
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-foreground font-medium">Full Name</Label>
+                <Label htmlFor="name" className="text-foreground font-medium">
+                  Full Name
+                </Label>
                 <Input
                   id="name"
                   type="text"
@@ -129,7 +142,9 @@ if (setIsLoggedIn) setIsLoggedIn(true);
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground font-medium">Email Address</Label>
+              <Label htmlFor="email" className="text-foreground font-medium">
+                Email Address
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -142,7 +157,9 @@ if (setIsLoggedIn) setIsLoggedIn(true);
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-foreground font-medium">Password</Label>
+              <Label htmlFor="password" className="text-foreground font-medium">
+                Password
+              </Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -169,8 +186,13 @@ if (setIsLoggedIn) setIsLoggedIn(true);
           </form>
 
           <div className="text-center mt-4">
-            <button onClick={() => setIsSignUp(!isSignUp)} className="text-primary hover:underline">
-              {isSignUp ? "Already have an account? Login" : "Don't have an account? Sign Up"}
+            <button
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-primary hover:underline"
+            >
+              {isSignUp
+                ? "Already have an account? Login"
+                : "Don't have an account? Sign Up"}
             </button>
           </div>
         </Card>

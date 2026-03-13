@@ -20,9 +20,31 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Name, email, and password are required" });
     }
 
+    // ---------- NAME UNIQUENESS ----------
+    const existingName = await User.findOne({
+      name: name.trim().toLowerCase(),
+    });
+
+    if (existingName) {
+      return res.status(400).json({
+        message: "Username already in use. Try a different one.",
+      });
+    }
+
     const existingUser = await User.findOne({ email: email.trim().toLowerCase() });
     if (existingUser) {
       return res.status(400).json({ message: "Email already registered" });
+    }
+
+     // ---------- PASSWORD STRENGTH ----------
+    const strongPassword =
+     /^(?=.*\d)(?=.*[@$!%*#?&^_-]).{6,}$/; // At least 6 chars, 1 number, 1 special char
+
+    if (!strongPassword.test(password)) {
+      return res.status(400).json({
+        message:
+          "Password must be 6+ characters with at least 1 number and 1 special character",
+      });
     }
 
     const newUser = new User({

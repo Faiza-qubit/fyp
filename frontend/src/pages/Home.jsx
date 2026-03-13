@@ -6,21 +6,22 @@ import Testimonials from "@/components/Testimonials";
 import Newsletter from "@/components/Newsletter";
 import FeedbackForm from "@/components/FeedbackForm";
 
-
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
-    
       <main>
         <HeroSection />
-        <FeaturedProducts />
+        <section id="featured">
+          <FeaturedProducts />
+        </section>
         <VirtualTryOn />
-        <StatsSection />
+        <section id="about">
+          <StatsSection />
+        </section>
         <Testimonials />
         <Newsletter />
         <FeedbackForm />
       </main>
-  
     </div>
   );
 }

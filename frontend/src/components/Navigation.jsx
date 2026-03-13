@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "../components/ui/button";
-import { Search, ShoppingBag, Menu, X, Scan, Sparkles, Plus } from "lucide-react";
+import { User, ShoppingBag, Menu, X, Scan, Sparkles, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "wouter";
 
@@ -8,6 +8,12 @@ export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [cartCount] = useState(2); // TODO: remove mock
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -16,8 +22,8 @@ export default function Navigation() {
   }, []);
 
   const navLinks = [
-    { name: "New Arrivals", href: "#new" },
-    { name: "Collections", href: "#collections" },
+    { name: "New Arrivals", href: "#featured" },
+    { name: "Collections", href: "#featured" },
     { name: "Virtual Try-On", href: "#try-on" },
     { name: "About", href: "#about" },
   ];
@@ -35,9 +41,12 @@ export default function Navigation() {
     >
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-20">
-
           {/* ---- LOGO (updated to Link) ---- */}
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link
+            to="/"
+            onClick={scrollToTop}
+            className="flex items-center gap-2 group"
+          >
             <motion.div
               className="relative"
               whileHover={{ rotate: [0, -5, 5, 0] }}
@@ -95,12 +104,20 @@ export default function Navigation() {
 
           {/* ---- RIGHT CONTROLS ---- */}
           <div className="flex items-center gap-3">
-            <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-300">
-              <Search className="w-5 h-5" />
+            <Button
+              size="icon"
+              variant="ghost"
+              className="text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-300"
+            >
+              <User className="w-5 h-5" />
             </Button>
 
             <div className="relative">
-              <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-300">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-300"
+              >
                 <ShoppingBag className="w-5 h-5" />
               </Button>
               {cartCount > 0 && (
@@ -116,7 +133,10 @@ export default function Navigation() {
             </div>
 
             <Link href="/login">
-              <Button variant="outline" className="hidden sm:flex gap-2 border-primary/50 text-foreground hover:bg-primary/10 hover:border-primary rounded-full px-5 transition-all duration-300">
+              <Button
+                variant="outline"
+                className="hidden sm:flex gap-2 border-primary/50 text-foreground hover:bg-primary/10 hover:border-primary rounded-full px-5 transition-all duration-300"
+              >
                 <Plus className="w-4 h-4" />
                 Quick Add
               </Button>
@@ -133,7 +153,11 @@ export default function Navigation() {
               className="md:hidden text-muted-foreground"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
             </Button>
           </div>
         </div>
@@ -175,7 +199,10 @@ export default function Navigation() {
 
               <div className="space-y-3 mt-4">
                 <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button variant="outline" className="w-full gap-2 border-primary/50 text-foreground hover:bg-primary/10 rounded-full">
+                  <Button
+                    variant="outline"
+                    className="w-full gap-2 border-primary/50 text-foreground hover:bg-primary/10 rounded-full"
+                  >
                     <Plus className="w-4 h-4" />
                     Quick Add
                   </Button>

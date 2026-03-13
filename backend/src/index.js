@@ -39,7 +39,7 @@ app.use("/api/feedback", feedbackRoutes); // ✅ Add feedback routes
 // Connect MongoDB
 mongoose
   .connect(
-    "mongodb+srv://gullfaiza22_db_user:wtfwtfwtf0@cluster0.dsbp0z9.mongodb.net/?appName=Cluster0"
+    "mongodb+srv://Anum:pascal12@sizewise.q8hgsem.mongodb.net/fyp"
   )
   .then(() => {
     console.log("✅ MongoDB connected successfully");

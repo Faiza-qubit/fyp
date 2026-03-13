@@ -11,7 +11,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { Search, Filter, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,39 +34,39 @@ export default function Shop() {
 
   const categoriesCounts = useMemo(() => {
     const counts = {};
-    categories.forEach(cat => {
-      counts[cat] = SHOES.filter(s => s.category === cat).length;
+    categories.forEach((cat) => {
+      counts[cat] = SHOES.filter((s) => s.category === cat).length;
     });
     return counts;
   }, []);
 
   const gendersCounts = useMemo(() => {
     const counts = {};
-    genders.forEach(gen => {
-      counts[gen] = SHOES.filter(s => s.gender === gen).length;
+    genders.forEach((gen) => {
+      counts[gen] = SHOES.filter((s) => s.gender === gen).length;
     });
     return counts;
   }, []);
 
   const brandsCounts = useMemo(() => {
     const counts = {};
-    brands.forEach(brand => {
-      counts[brand] = SHOES.filter(s => s.brand === brand).length;
+    brands.forEach((brand) => {
+      counts[brand] = SHOES.filter((s) => s.brand === brand).length;
     });
     return counts;
   }, []);
 
   const colorsCounts = useMemo(() => {
     const counts = {};
-    colors.forEach(col => {
-      counts[col] = SHOES.filter(s => s.color === col).length;
+    colors.forEach((col) => {
+      counts[col] = SHOES.filter((s) => s.color === col).length;
     });
     return counts;
   }, []);
 
   // Filter + sort
   const filteredShoes = useMemo(() => {
-    let shoes = SHOES.filter(shoe => {
+    let shoes = SHOES.filter((shoe) => {
       const matchesSearch =
         shoe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         shoe.brand.toLowerCase().includes(searchQuery.toLowerCase());
@@ -77,7 +77,7 @@ export default function Shop() {
           : true;
 
       let effectiveGenders = [...selectedGenders];
-      if (selectedGenders.some(g => g === "Men" || g === "Women")) {
+      if (selectedGenders.some((g) => g === "Men" || g === "Women")) {
         effectiveGenders = [...new Set([...effectiveGenders, "Unisex"])];
       }
       const matchesGender =
@@ -86,27 +86,34 @@ export default function Shop() {
           : true;
 
       const matchesBrand =
-        selectedBrands.length > 0
-          ? selectedBrands.includes(shoe.brand)
-          : true;
+        selectedBrands.length > 0 ? selectedBrands.includes(shoe.brand) : true;
 
       const matchesColor =
-        selectedColors.length > 0
-          ? selectedColors.includes(shoe.color)
-          : true;
+        selectedColors.length > 0 ? selectedColors.includes(shoe.color) : true;
 
-      return matchesSearch && matchesCategory && matchesGender && matchesBrand && matchesColor;
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesGender &&
+        matchesBrand &&
+        matchesColor
+      );
     });
 
-    if (sortOrder === "price-low")
-      shoes.sort((a, b) => a.price - b.price);
+    if (sortOrder === "price-low") shoes.sort((a, b) => a.price - b.price);
     else if (sortOrder === "price-high")
       shoes.sort((a, b) => b.price - a.price);
-    else if (sortOrder === "newest")
-      shoes.sort((a, b) => b.id - a.id);
+    else if (sortOrder === "newest") shoes.sort((a, b) => b.id - a.id);
 
     return shoes;
-  }, [searchQuery, selectedCategories, selectedGenders, selectedBrands, selectedColors, sortOrder]);
+  }, [
+    searchQuery,
+    selectedCategories,
+    selectedGenders,
+    selectedBrands,
+    selectedColors,
+    sortOrder,
+  ]);
 
   const resetFilters = () => {
     setSelectedCategories([]);
@@ -126,7 +133,7 @@ export default function Shop() {
     });
 
     const toggleSection = (section) => {
-      setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
+      setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
     };
 
     return (
@@ -135,7 +142,11 @@ export default function Shop() {
 
         <div className="flex items-center justify-between">
           <h3 className="font-serif font-bold text-xl text-white">Filters</h3>
-          {(selectedCategories.length || selectedGenders.length || selectedBrands.length || selectedColors.length || searchQuery) && (
+          {(selectedCategories.length ||
+            selectedGenders.length ||
+            selectedBrands.length ||
+            selectedColors.length ||
+            searchQuery) && (
             <span
               onClick={resetFilters}
               className="text-sm text-yellow-400 cursor-pointer hover:underline"
@@ -148,23 +159,26 @@ export default function Shop() {
         {/* Category Accordion */}
         <div>
           <button
-            onClick={() => toggleSection('category')}
-            className={`flex items-center justify-between w-full text-sm uppercase tracking-wide font-bold transition-colors duration-300 hover:text-yellow-400 ${openSections.category ? 'text-yellow-400' : 'text-white'
-              }`}
+            onClick={() => toggleSection("category")}
+            className={`flex items-center justify-between w-full text-sm uppercase tracking-wide font-bold transition-colors duration-300 hover:text-yellow-400 ${
+              openSections.category ? "text-yellow-400" : "text-white"
+            }`}
           >
             Category
-            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${openSections.category ? 'rotate-180 text-yellow-400' : 'text-gray-400'}`} />
+            <ChevronDown
+              className={`h-4 w-4 transition-transform duration-300 ${openSections.category ? "rotate-180 text-yellow-400" : "text-gray-400"}`}
+            />
           </button>
           <AnimatePresence>
             {openSections.category && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
+                animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="overflow-hidden mt-3 space-y-2"
               >
-                {categories.map(cat => (
+                {categories.map((cat) => (
                   <div key={cat} className="flex items-center space-x-2">
                     <Checkbox
                       id={`cat-${cat}`}
@@ -173,7 +187,9 @@ export default function Shop() {
                         if (checked) {
                           setSelectedCategories([...selectedCategories, cat]);
                         } else {
-                          setSelectedCategories(selectedCategories.filter(c => c !== cat));
+                          setSelectedCategories(
+                            selectedCategories.filter((c) => c !== cat),
+                          );
                         }
                       }}
                       className="data-[state=checked]:bg-yellow-400 data-[state=checked]:border-yellow-400 border-gray-600"
@@ -195,23 +211,26 @@ export default function Shop() {
         {/* Gender Accordion */}
         <div>
           <button
-            onClick={() => toggleSection('gender')}
-            className={`flex items-center justify-between w-full text-sm uppercase tracking-wide font-bold transition-colors duration-300 hover:text-yellow-400 ${openSections.gender ? 'text-yellow-400' : 'text-white'
-              }`}
+            onClick={() => toggleSection("gender")}
+            className={`flex items-center justify-between w-full text-sm uppercase tracking-wide font-bold transition-colors duration-300 hover:text-yellow-400 ${
+              openSections.gender ? "text-yellow-400" : "text-white"
+            }`}
           >
             Gender
-            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${openSections.gender ? 'rotate-180 text-yellow-400' : 'text-gray-400'}`} />
+            <ChevronDown
+              className={`h-4 w-4 transition-transform duration-300 ${openSections.gender ? "rotate-180 text-yellow-400" : "text-gray-400"}`}
+            />
           </button>
           <AnimatePresence>
             {openSections.gender && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
+                animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="overflow-hidden mt-3 space-y-2"
               >
-                {genders.map(gen => (
+                {genders.map((gen) => (
                   <div key={gen} className="flex items-center space-x-2">
                     <Checkbox
                       id={`gen-${gen}`}
@@ -220,7 +239,9 @@ export default function Shop() {
                         if (checked) {
                           setSelectedGenders([...selectedGenders, gen]);
                         } else {
-                          setSelectedGenders(selectedGenders.filter(g => g !== gen));
+                          setSelectedGenders(
+                            selectedGenders.filter((g) => g !== gen),
+                          );
                         }
                       }}
                       className="data-[state=checked]:bg-yellow-400 data-[state=checked]:border-yellow-400 border-gray-600"
@@ -242,23 +263,26 @@ export default function Shop() {
         {/* Brand Accordion */}
         <div>
           <button
-            onClick={() => toggleSection('brand')}
-            className={`flex items-center justify-between w-full text-sm uppercase tracking-wide font-bold transition-colors duration-300 hover:text-yellow-400 ${openSections.brand ? 'text-yellow-400' : 'text-white'
-              }`}
+            onClick={() => toggleSection("brand")}
+            className={`flex items-center justify-between w-full text-sm uppercase tracking-wide font-bold transition-colors duration-300 hover:text-yellow-400 ${
+              openSections.brand ? "text-yellow-400" : "text-white"
+            }`}
           >
             Brand
-            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${openSections.brand ? 'rotate-180 text-yellow-400' : 'text-gray-400'}`} />
+            <ChevronDown
+              className={`h-4 w-4 transition-transform duration-300 ${openSections.brand ? "rotate-180 text-yellow-400" : "text-gray-400"}`}
+            />
           </button>
           <AnimatePresence>
             {openSections.brand && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
+                animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="overflow-hidden mt-3 space-y-2"
               >
-                {brands.map(brand => (
+                {brands.map((brand) => (
                   <div key={brand} className="flex items-center space-x-2">
                     <Checkbox
                       id={`brand-${brand}`}
@@ -267,7 +291,9 @@ export default function Shop() {
                         if (checked) {
                           setSelectedBrands([...selectedBrands, brand]);
                         } else {
-                          setSelectedBrands(selectedBrands.filter(b => b !== brand));
+                          setSelectedBrands(
+                            selectedBrands.filter((b) => b !== brand),
+                          );
                         }
                       }}
                       className="data-[state=checked]:bg-yellow-400 data-[state=checked]:border-yellow-400 border-gray-600"
@@ -289,23 +315,26 @@ export default function Shop() {
         {/* Color Accordion */}
         <div>
           <button
-            onClick={() => toggleSection('color')}
-            className={`flex items-center justify-between w-full text-sm uppercase tracking-wide font-bold transition-colors duration-300 hover:text-yellow-400 ${openSections.color ? 'text-yellow-400' : 'text-white'
-              }`}
+            onClick={() => toggleSection("color")}
+            className={`flex items-center justify-between w-full text-sm uppercase tracking-wide font-bold transition-colors duration-300 hover:text-yellow-400 ${
+              openSections.color ? "text-yellow-400" : "text-white"
+            }`}
           >
             Color
-            <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${openSections.color ? 'rotate-180 text-yellow-400' : 'text-gray-400'}`} />
+            <ChevronDown
+              className={`h-4 w-4 transition-transform duration-300 ${openSections.color ? "rotate-180 text-yellow-400" : "text-gray-400"}`}
+            />
           </button>
           <AnimatePresence>
             {openSections.color && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
+                animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="overflow-hidden mt-3 space-y-2"
               >
-                {colors.map(col => (
+                {colors.map((col) => (
                   <div key={col} className="flex items-center space-x-2">
                     <Checkbox
                       id={`col-${col}`}
@@ -314,7 +343,9 @@ export default function Shop() {
                         if (checked) {
                           setSelectedColors([...selectedColors, col]);
                         } else {
-                          setSelectedColors(selectedColors.filter(c => c !== col));
+                          setSelectedColors(
+                            selectedColors.filter((c) => c !== col),
+                          );
                         }
                       }}
                       className="data-[state=checked]:bg-yellow-400 data-[state=checked]:border-yellow-400 border-gray-600"
@@ -337,7 +368,6 @@ export default function Shop() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-neutral-900 text-white">
-
       <div className="container mx-auto px-4 md:px-8 py-8">
         {/* Header with Gradient and Animation */}
         <motion.div
@@ -353,18 +383,20 @@ export default function Shop() {
             </span>
           </h1>
           <p className="text-white text-lg mb-8">
-            Discover our curated collection of premium sneakers, boots, and performance footwear designed for the modern era.
+            Discover our curated collection of premium sneakers, boots, and
+            performance footwear designed for the modern era.
           </p>
 
           {/* Search + Sort */}
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="relative flex-grow">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-300 z-10" />
+
               <Input
                 placeholder="Search shoes or brands..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-14 bg-neutral-900/50 border border-white/10 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 focus:outline-none transition-all duration-300 ease-in-out backdrop-blur-sm"
+                className="pl-12 h-14 bg-neutral-900 border border-white/10 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 focus:outline-none transition-all duration-300"
               />
             </div>
 
@@ -444,7 +476,11 @@ export default function Shop() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ delay: index * 0.05, duration: 0.4, ease: "easeOut" }}
+                    transition={{
+                      delay: index * 0.05,
+                      duration: 0.4,
+                      ease: "easeOut",
+                    }}
                   >
                     <ShoeCard shoe={shoe} />
                   </motion.div>
