@@ -11,6 +11,18 @@ import { useEffect } from "react";
 
 const API_BASE_URL = "http://localhost:5000/api"; // Update to your backend URL
 
+function getApiErrorMessage(err, fallbackMessage) {
+  if (err?.response?.data?.message) {
+    return err.response.data.message;
+  }
+
+  if (err?.code === "ERR_NETWORK") {
+    return "Cannot connect to server. Please start backend on port 5000 and try again.";
+  }
+
+  return fallbackMessage;
+}
+
 export default function Login({ setIsLoggedIn }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,6 +30,10 @@ export default function Login({ setIsLoggedIn }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotMode, setIsForgotMode] = useState(false);
+  const [resetPassword, setResetPassword] = useState("");
+  const [confirmResetPassword, setConfirmResetPassword] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
   const [error, setError] = useState("");
   const [, setLocation] = useLocation();
 
@@ -45,15 +61,14 @@ export default function Login({ setIsLoggedIn }) {
         endpoint,
         isSignUp ? { name, email, password } : { email, password },
       );
-      console.log("Response data:", response.data);
 
-      const { token } = response.data;
-      const userId = response.data.user.id; // <-- directly assign it
+      const { token, user } = response.data;
       if (!token) throw new Error("No token received from backend");
 
       // SAVE AUTH DATA
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
+      window.dispatchEvent(new Event("auth-changed"));
 
       // UPDATE LOGIN STATE
       if (setIsLoggedIn) setIsLoggedIn(true);
@@ -62,12 +77,55 @@ export default function Login({ setIsLoggedIn }) {
       setLocation("/shop");
     } catch (err) {
       console.error("Auth error:", err);
+      setError(getApiErrorMessage(err, "Login failed. Please try again."));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError("Something went wrong");
-      }
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setError("");
+    setResetMessage("");
+
+    if (!email.trim()) {
+      setError("Please enter your email address");
+      return;
+    }
+
+    if (!resetPassword) {
+      setError("Please enter a new password");
+      return;
+    }
+
+    if (resetPassword !== confirmResetPassword) {
+      setError("New password and confirm password do not match");
+      return;
+    }
+
+    const strongPassword = /^(?=.*\d)(?=.*[@$!%*#?&^_-]).{6,}$/;
+    if (!strongPassword.test(resetPassword)) {
+      setError(
+        "Password must be 6+ characters with at least 1 number and 1 special character",
+      );
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await axios.post(`${API_BASE_URL}/forgot-password`, {
+        email,
+        newPassword: resetPassword,
+      });
+
+      setResetMessage(response.data.message || "Password updated successfully");
+      setResetPassword("");
+      setConfirmResetPassword("");
+      setIsForgotMode(false);
+      setIsSignUp(false);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Unable to reset password"));
     } finally {
       setIsLoading(false);
     }
@@ -113,18 +171,25 @@ export default function Login({ setIsLoggedIn }) {
         <Card className="p-8 lg:p-10 bg-gradient-to-b from-card to-card/50 border-primary/20 shadow-2xl shadow-primary/10 backdrop-blur-sm">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-foreground mb-2">
-              {isSignUp ? "Create Account" : "Welcome Back"}
+              {isForgotMode
+                ? "Reset Password"
+                : isSignUp
+                  ? "Create Account"
+                  : "Welcome Back"}
             </h1>
             <p className="text-muted-foreground">
-              {isSignUp
+              {isForgotMode
+                ? "Set a new password for your account"
+                : isSignUp
                 ? "Sign up to start shopping"
                 : "Sign in to access Quick Add features"}
             </p>
             {error && <p className="text-red-500 mt-2">{error}</p>}
+            {resetMessage && <p className="text-green-500 mt-2">{resetMessage}</p>}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {isSignUp && (
+          <form onSubmit={isForgotMode ? handleForgotPassword : handleSubmit} className="space-y-5">
+            {isSignUp && !isForgotMode && (
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-foreground font-medium">
                   Full Name
@@ -158,15 +223,17 @@ export default function Login({ setIsLoggedIn }) {
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-foreground font-medium">
-                Password
+                {isForgotMode ? "New Password" : "Password"}
               </Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={isForgotMode ? "Enter your new password" : "Enter your password"}
+                  value={isForgotMode ? resetPassword : password}
+                  onChange={(e) =>
+                    isForgotMode ? setResetPassword(e.target.value) : setPassword(e.target.value)
+                  }
                   required
                   disabled={isLoading}
                 />
@@ -180,14 +247,74 @@ export default function Login({ setIsLoggedIn }) {
               </div>
             </div>
 
+            {isForgotMode && (
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password" className="text-foreground font-medium">
+                  Confirm New Password
+                </Label>
+                <Input
+                  id="confirm-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Re-enter your new password"
+                  value={confirmResetPassword}
+                  onChange={(e) => setConfirmResetPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+
             <Button type="submit" disabled={isLoading} className="w-full">
-              {isLoading ? "Loading..." : isSignUp ? "Sign Up" : "Login"}
+              {isLoading
+                ? "Loading..."
+                : isForgotMode
+                  ? "Reset Password"
+                  : isSignUp
+                    ? "Sign Up"
+                    : "Login"}
             </Button>
           </form>
 
-          <div className="text-center mt-4">
+          <div className="text-center mt-4 space-y-2">
+            {!isSignUp && !isForgotMode && (
+              <button
+                onClick={() => {
+                  setIsForgotMode(true);
+                  setIsSignUp(false);
+                  setError("");
+                  setResetMessage("");
+                  setResetPassword("");
+                  setConfirmResetPassword("");
+                }}
+                className="text-sm text-muted-foreground hover:text-primary"
+              >
+                Forgot Password?
+              </button>
+            )}
+
+            {isForgotMode && (
+              <button
+                onClick={() => {
+                  setIsForgotMode(false);
+                  setResetPassword("");
+                  setConfirmResetPassword("");
+                  setError("");
+                }}
+                className="text-primary hover:underline block w-full"
+              >
+                Back to Login
+              </button>
+            )}
+
             <button
-              onClick={() => setIsSignUp(!isSignUp)}
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setIsForgotMode(false);
+                setResetPassword("");
+                setConfirmResetPassword("");
+                setResetMessage("");
+                setError("");
+              }}
               className="text-primary hover:underline"
             >
               {isSignUp

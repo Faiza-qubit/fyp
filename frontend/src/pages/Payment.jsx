@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { loadStripe } from "@stripe/stripe-js";
 import { CardElement, Elements, useStripe, useElements } from "@stripe/react-stripe-js";
 import axios from "axios";
+import { clearCart, getCartItems } from "@/lib/cart";
 
 const API_BASE_URL = "http://localhost:5000/api";
 const STRIPE_PUBLISHABLE_KEY = "pk_test_51Sc8iyHLnZ9m3Jv2RutezcRpbj7DMNFWIdH3zbVg7kSFPWeU86z7ZH8q1lCCYSWd4EDq4kKAps4jcdH51TPtY3rV00bgBglRz4"; // Replace with your actual key
@@ -23,6 +24,7 @@ function PaymentForm() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [cartItems, setCartItems] = useState([]);
 
   // Scroll to top when a success message appears so the banner is visible
   useEffect(() => {
@@ -39,9 +41,25 @@ function PaymentForm() {
     city: "",
     zipCode: "",
     country: "",
-    amount: 120.00,
+    amount: 0,
     shoeSize: "10",
   });
+
+  useEffect(() => {
+    const items = getCartItems();
+    setCartItems(items);
+
+    const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0), 0);
+    setFormData((prev) => ({
+      ...prev,
+      amount: subtotal,
+      shoeSize: items[0]?.size ? String(items[0].size) : "10",
+    }));
+  }, []);
+
+  const subtotal = formData.amount;
+  const tax = subtotal * 0.1;
+  const totalAmount = subtotal + tax;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -70,6 +88,16 @@ function PaymentForm() {
       return;
     }
 
+    if (!cartItems.length || totalAmount <= 0) {
+      toast({
+        title: "Cart is empty",
+        description: "Add products to cart before checkout",
+        variant: "destructive",
+      });
+      navigate("/cart");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -77,7 +105,7 @@ function PaymentForm() {
       const intentResponse = await axios.post(
         `${API_BASE_URL}/payments/create-intent`,
         {
-          amount: formData.amount,
+          amount: totalAmount,
           email: formData.email,
           fullName: formData.fullName,
           shoeSize: formData.shoeSize,
@@ -125,8 +153,9 @@ function PaymentForm() {
             zipCode: formData.zipCode,
             country: formData.country,
             shoeSize: formData.shoeSize,
-            amount: formData.amount,
+            amount: totalAmount,
           });
+          clearCart();
           setSuccessMessage({
             title: "Payment Confirmed",
             description: "Thank you for your purchase. Your order is now being prepared.",
@@ -378,7 +407,7 @@ function PaymentForm() {
               <Button
                 type="submit"
                 size="lg"
-                disabled={!stripe || loading}
+                disabled={!stripe || loading || cartItems.length === 0}
                 className="w-full h-14 text-lg font-bold bg-yellow-500 text-black hover:bg-yellow-600 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {loading ? (
@@ -404,23 +433,39 @@ function PaymentForm() {
 
               {/* Item */}
               <div className="space-y-4 mb-6">
-                <div className="flex gap-4">
-                  <div className="w-20 h-20 bg-neutral-800 rounded-lg flex items-center justify-center">
-                    <ShoppingBag className="w-8 h-8 text-gray-500" />
+                {cartItems.length === 0 ? (
+                  <div className="flex gap-4">
+                    <div className="w-20 h-20 bg-neutral-800 rounded-lg flex items-center justify-center">
+                      <ShoppingBag className="w-8 h-8 text-gray-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-sm">No items in cart</h3>
+                      <p className="text-gray-400 text-sm">Please add shoes before paying.</p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-sm">Selected Shoe</h3>
-                    <p className="text-gray-400 text-sm">Size: US {formData.shoeSize}</p>
-                    <p className="text-yellow-500 font-bold mt-1">${formData.amount.toFixed(2)}</p>
-                  </div>
-                </div>
+                ) : (
+                  cartItems.map((item) => (
+                    <div className="flex gap-4" key={item.id}>
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-20 h-20 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-bold text-sm">{item.name}</h3>
+                        <p className="text-gray-400 text-sm">Size: US {item.size}</p>
+                        <p className="text-yellow-500 font-bold mt-1">${Number(item.price || 0).toFixed(2)}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
               {/* Price Breakdown */}
               <div className="space-y-3 border-t border-white/10 pt-4 mb-6">
                 <div className="flex justify-between text-gray-400">
                   <span>Subtotal</span>
-                  <span>${formData.amount.toFixed(2)}</span>
+                  <span>${subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-400">
                   <span>Shipping</span>
@@ -428,7 +473,7 @@ function PaymentForm() {
                 </div>
                 <div className="flex justify-between text-gray-400">
                   <span>Tax</span>
-                  <span>${(formData.amount * 0.1).toFixed(2)}</span>
+                  <span>${tax.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -437,7 +482,7 @@ function PaymentForm() {
                 <div className="flex justify-between items-center">
                   <span className="text-xl font-bold">Total</span>
                   <span className="text-2xl font-bold text-yellow-500">
-                    ${(formData.amount * 1.1).toFixed(2)}
+                    ${totalAmount.toFixed(2)}
                   </span>
                 </div>
               </div>

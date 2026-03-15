@@ -23,7 +23,7 @@ export const SHOES = [
     description:
       "Hand-crafted Italian leather with 24k gold plated accents. The ultimate statement in streetwear luxury.",
     sizes: [7, 8, 9, 10, 11, 12],
-    colors: ["#000000", "#D4AF37"], // Black & Gold
+    colors: ["#000000"], // Black
     arEnabled: true,
     themeClasses: "bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))]",
   },
@@ -38,7 +38,7 @@ export const SHOES = [
     description:
       "Aerodynamic design meets opulent aesthetics. High-performance sole with gold-infused cushioning.",
     sizes: [6, 7, 8, 9, 10, 11],
-    colors: ["#000000", "#FFFFFF"], // Black & White
+    colors: ["#000000"], // Black
     arEnabled: true,
     themeClasses: "bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))]",
   },
@@ -53,7 +53,7 @@ export const SHOES = [
     description:
       "Classic oxford silhouette reimagined for the modern tycoon. Polished black leather with subtle gold stitching.",
     sizes: [8, 9, 10, 11, 12],
-    colors: ["#000000", "#3E2723"], // Black & Dark Brown
+    colors: ["#000000"], // Black
     arEnabled: false,
     themeClasses: "bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))]",
   },
@@ -68,7 +68,7 @@ export const SHOES = [
     description:
       "Premium high-top sneaker with white and gold accents. Bold, stylish, and luxurious.",
     sizes: [7, 8, 9, 10, 11],
-    colors: ["#FFFFFF", "#D4AF37"], // White & Gold
+    colors: ["#000000"], // Black
     arEnabled: true,
     themeClasses: "bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))]",
   },
@@ -83,7 +83,7 @@ export const SHOES = [
     description:
       "A clean, minimalist sneaker with subtle gold highlights. Comfort meets understated luxury.",
     sizes: [5, 6, 7, 8, 9],
-    colors: ["#FFFFFF", "#D4AF37"], // White & Gold
+    colors: ["#000000"], // Black
     arEnabled: true,
     themeClasses: "bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))]",
   },
@@ -113,7 +113,7 @@ export const SHOES = [
     description:
       "Luxurious navy suede with subtle gold accents. Perfect for formal events and boardroom meetings.",
     sizes: [8, 9, 10, 11],
-    colors: ["#0A1F44", "#D4AF37"], // Navy & Gold
+    colors: ["#000000"], // Black
     arEnabled: true,
     themeClasses: "bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))]",
   },

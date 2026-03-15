@@ -3,6 +3,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Send, Sparkles, Check, Zap, Gift } from "lucide-react";
 import { motion } from "framer-motion";
+import axios from "axios";
 
 const benefits = [
   { icon: Gift, text: "Early access to limited editions" },
@@ -13,19 +14,39 @@ const benefits = [
 export default function Newsletter() {
   const [email, setEmail] = useState("");
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isAlreadySubscribed, setIsAlreadySubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [serverMessage, setServerMessage] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email) return;
 
     setIsLoading(true);
-    // todo: replace mock functionality with actual newsletter API
-    setTimeout(() => {
+    setServerMessage("");
+    setIsAlreadySubscribed(false);
+
+    try {
+      const response = await axios.post("http://localhost:5000/api/subscriptions", {
+        email,
+      });
+
+      if (response.data?.alreadySubscribed) {
+        setIsAlreadySubscribed(true);
+        setIsSubmitted(false);
+        setServerMessage(response.data.message || "This email is already subscribed.");
+      } else {
+        setServerMessage(response.data.message || "Subscription successful");
+        setIsSubmitted(true);
+        setEmail("");
+      }
+    } catch (error) {
+      setIsSubmitted(false);
+      setIsAlreadySubscribed(false);
+      setServerMessage(error.response?.data?.message || "Unable to subscribe right now");
+    } finally {
       setIsLoading(false);
-      setIsSubmitted(true);
-      console.log("Newsletter signup:", email);
-    }, 1000);
+    }
   };
 
   return (
@@ -55,7 +76,6 @@ export default function Newsletter() {
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* Badge */}
           <motion.div
             className="inline-flex items-center gap-2 bg-gradient-to-r from-primary to-yellow-500 text-primary-foreground px-5 py-2.5 rounded-full mb-6 shadow-lg shadow-primary/25"
             initial={{ opacity: 0, scale: 0.8 }}
@@ -81,11 +101,10 @@ export default function Newsletter() {
           </h2>
 
           <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-            Subscribe to get early access to limited editions, exclusive discounts, 
+            Subscribe to get early access to limited editions, exclusive discounts,
             and be the first to know about our latest collections.
           </p>
 
-          {/* Benefits */}
           <motion.div
             className="flex flex-wrap justify-center gap-6 mb-10"
             initial={{ opacity: 0, y: 20 }}
@@ -109,7 +128,6 @@ export default function Newsletter() {
             ))}
           </motion.div>
 
-          {/* Form or Confirmation */}
           {isSubmitted ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.8, y: 20 }}
@@ -124,7 +142,20 @@ export default function Newsletter() {
               >
                 <Check className="w-6 h-6 text-primary-foreground" />
               </motion.div>
-              <span className="font-semibold text-lg">You're on the list! Check your inbox.</span>
+              <span className="font-semibold text-lg">
+                {serverMessage || "You're on the list! Check your inbox."}
+              </span>
+            </motion.div>
+          ) : isAlreadySubscribed ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.25 }}
+              className="inline-flex items-center gap-3 bg-yellow-500/15 text-yellow-300 px-6 py-4 rounded-2xl border border-yellow-500/30"
+            >
+              <span className="font-semibold">
+                {serverMessage || "This email is already subscribed."}
+              </span>
             </motion.div>
           ) : (
             <motion.form
@@ -172,6 +203,10 @@ export default function Newsletter() {
                 </Button>
               </motion.div>
             </motion.form>
+          )}
+
+          {serverMessage && !isSubmitted && (
+            <p className="text-sm text-red-400 mt-4">{serverMessage}</p>
           )}
 
           <motion.p

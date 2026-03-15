@@ -4,19 +4,24 @@ import Feedback from "../models/Feedback.js";
 export const createFeedback = async (req, res) => {
   const { userId, name, email, category, rating, message } = req.body;
 
-  if (!userId || !name || !email || !category || !rating || !message) {
+  if (!name || !email || !category || !rating || !message) {
     return res.status(400).json({ error: "All fields are required." });
   }
 
   try {
-    const newFeedback = await Feedback.create({
-      userId,
+    const payload = {
       name,
       email,
       category,
       rating,
       message,
-    });
+    };
+
+    if (userId) {
+      payload.userId = userId;
+    }
+
+    const newFeedback = await Feedback.create(payload);
 
     res.status(201).json({ message: "Feedback submitted successfully.", feedback: newFeedback });
     console.log("New feedback created:", newFeedback);

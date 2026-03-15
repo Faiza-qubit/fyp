@@ -24,6 +24,12 @@ const UserSchema = new mongoose.Schema(
       required: true,
       minlength: 6           // basic password rule
     },
+
+    footProfile: {
+      footLengthCm: { type: String, default: "" },
+      footWidthCm: { type: String, default: "" },
+      recommendedSize: { type: String, default: "" },
+    },
   },
   { timestamps: true }
 );

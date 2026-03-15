@@ -24,13 +24,11 @@ export default function Shop() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedGenders, setSelectedGenders] = useState([]);
   const [selectedBrands, setSelectedBrands] = useState([]);
-  const [selectedColors, setSelectedColors] = useState([]);
   const [sortOrder, setSortOrder] = useState("featured");
 
   const categories = ["Running", "Casual", "Formal", "Sneakers"];
   const genders = ["Men", "Women", "Unisex"];
   const brands = ["Nike", "Adidas", "Puma", "Clarks", "Gucci"];
-  const colors = ["Black", "White", "Red", "Blue", "Green"];
 
   const categoriesCounts = useMemo(() => {
     const counts = {};
@@ -52,14 +50,6 @@ export default function Shop() {
     const counts = {};
     brands.forEach((brand) => {
       counts[brand] = SHOES.filter((s) => s.brand === brand).length;
-    });
-    return counts;
-  }, []);
-
-  const colorsCounts = useMemo(() => {
-    const counts = {};
-    colors.forEach((col) => {
-      counts[col] = SHOES.filter((s) => s.color === col).length;
     });
     return counts;
   }, []);
@@ -88,15 +78,11 @@ export default function Shop() {
       const matchesBrand =
         selectedBrands.length > 0 ? selectedBrands.includes(shoe.brand) : true;
 
-      const matchesColor =
-        selectedColors.length > 0 ? selectedColors.includes(shoe.color) : true;
-
       return (
         matchesSearch &&
         matchesCategory &&
         matchesGender &&
-        matchesBrand &&
-        matchesColor
+        matchesBrand
       );
     });
 
@@ -111,7 +97,6 @@ export default function Shop() {
     selectedCategories,
     selectedGenders,
     selectedBrands,
-    selectedColors,
     sortOrder,
   ]);
 
@@ -119,7 +104,6 @@ export default function Shop() {
     setSelectedCategories([]);
     setSelectedGenders([]);
     setSelectedBrands([]);
-    setSelectedColors([]);
     setSearchQuery("");
   };
 
@@ -129,7 +113,6 @@ export default function Shop() {
       category: false,
       gender: false,
       brand: false,
-      color: false,
     });
 
     const toggleSection = (section) => {
@@ -145,7 +128,6 @@ export default function Shop() {
           {(selectedCategories.length ||
             selectedGenders.length ||
             selectedBrands.length ||
-            selectedColors.length ||
             searchQuery) && (
             <span
               onClick={resetFilters}
@@ -312,56 +294,6 @@ export default function Shop() {
         </div>
         <hr className="my-4 border-neutral-700" />
 
-        {/* Color Accordion */}
-        <div>
-          <button
-            onClick={() => toggleSection("color")}
-            className={`flex items-center justify-between w-full text-sm uppercase tracking-wide font-bold transition-colors duration-300 hover:text-yellow-400 ${
-              openSections.color ? "text-yellow-400" : "text-white"
-            }`}
-          >
-            Color
-            <ChevronDown
-              className={`h-4 w-4 transition-transform duration-300 ${openSections.color ? "rotate-180 text-yellow-400" : "text-gray-400"}`}
-            />
-          </button>
-          <AnimatePresence>
-            {openSections.color && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="overflow-hidden mt-3 space-y-2"
-              >
-                {colors.map((col) => (
-                  <div key={col} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`col-${col}`}
-                      checked={selectedColors.includes(col)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSelectedColors([...selectedColors, col]);
-                        } else {
-                          setSelectedColors(
-                            selectedColors.filter((c) => c !== col),
-                          );
-                        }
-                      }}
-                      className="data-[state=checked]:bg-yellow-400 data-[state=checked]:border-yellow-400 border-gray-600"
-                    />
-                    <label
-                      htmlFor={`col-${col}`}
-                      className="text-sm font-medium text-white leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      {col} ({colorsCounts[col]})
-                    </label>
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
       </div>
     );
   };

@@ -133,16 +133,83 @@ export const login = async (req, res) => {
 // --------------------------- GET CURRENT USER ---------------------------
 export const getCurrentUser = async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "No token provided" });
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ message: "No token provided" });
 
-    const decoded = jwt.verify(token, getJwtSecret());
-    const user = await User.findById(decoded.userId).select("-password");
+    const user = await User.findById(userId).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
 
     res.status(200).json({ success: true, user });
   } catch (err) {
     console.error("Get current user error:", err);
     res.status(401).json({ success: false, message: "Invalid token", error: err.message });
+  }
+};
+
+// --------------------------- FORGOT PASSWORD ---------------------------
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ message: "Email and new password are required" });
+    }
+
+    const strongPassword = /^(?=.*\d)(?=.*[@$!%*#?&^_-]).{6,}$/;
+    if (!strongPassword.test(newPassword)) {
+      return res.status(400).json({
+        message:
+          "Password must be 6+ characters with at least 1 number and 1 special character",
+      });
+    }
+
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    if (!user) {
+      return res.status(404).json({ message: "No account found for this email" });
+    }
+
+    user.password = newPassword.trim();
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password has been reset successfully. Please login.",
+    });
+  } catch (err) {
+    console.error("Forgot password error:", err);
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
+
+// --------------------------- UPDATE FOOT PROFILE ---------------------------
+export const updateFootProfile = async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { footLengthCm = "", footWidthCm = "", recommendedSize = "" } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        footProfile: {
+          footLengthCm,
+          footWidthCm,
+          recommendedSize,
+        },
+      },
+      { new: true, runValidators: true },
+    ).select("-password");
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    return res.status(200).json({
+      success: true,
+      message: "Foot profile updated successfully",
+      user,
+    });
+  } catch (err) {
+    console.error("Update foot profile error:", err);
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
   }
 };

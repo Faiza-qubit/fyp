@@ -20,7 +20,7 @@ const API_BASE_URL = "http://localhost:5000/api";
 
 
 export default function FeedbackForm() {
-  const [error, setError] = useState(""); // <-- Add this line
+  const [error, setError] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [category, setCategory] = useState("");
@@ -34,9 +34,15 @@ const handleSubmit = async (e) => {
   e.preventDefault();
   setError("");
 
-  const userId = localStorage.getItem("userId"); // <-- get userId
+  let userId = "";
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    userId = user?.id || user?._id || "";
+  } catch {
+    userId = "";
+  }
 
-  if (!userId || !name || !email || !category || !rating || !message) {
+  if (!name || !email || !category || !rating || !message) {
     setError("Please fill all fields");
     return;
   }
@@ -48,7 +54,7 @@ const handleSubmit = async (e) => {
   try {
     console.log("sending to backend");
     const response = await axios.post(`${API_BASE_URL}/feedback`, {
-      userId,  // <-- include userId
+      userId,
       name,
       email,
       category,
@@ -57,25 +63,28 @@ const handleSubmit = async (e) => {
     });
 
     console.log("Feedback submitted:", response.data);
+    clearForm();
     setIsSubmitted(true);
-    resetForm();
   } catch (err) {
     console.error("Error submitting feedback:", err);
-    setError(err.response?.data?.message || "Failed to submit feedback");
+    setError(err.response?.data?.message || err.response?.data?.error || "Failed to submit feedback");
   } finally {
     setIsSubmitting(false);
   }
 };
 
-
-  const resetForm = () => {
+  const clearForm = () => {
     setName("");
     setEmail("");
     setCategory("");
     setRating(0);
     setMessage("");
-    setIsSubmitted(false);
     setError("");
+  };
+
+  const resetForm = () => {
+    clearForm();
+    setIsSubmitted(false);
   };
 
   return (
@@ -187,6 +196,10 @@ const handleSubmit = async (e) => {
                   onSubmit={handleSubmit}
                   className="space-y-6"
                 >
+                  {error && (
+                    <p className="text-red-500 text-sm" data-testid="text-feedback-error">{error}</p>
+                  )}
+
                   {/* Name & Email */}
                   <div className="grid sm:grid-cols-2 gap-6">
                     <motion.div
@@ -247,19 +260,25 @@ const handleSubmit = async (e) => {
                     </Label>
                     <Select value={category} onValueChange={setCategory} required>
                       <SelectTrigger 
-                        className="bg-background/50 border-primary/20 focus:border-primary rounded-xl h-12"
+                        className="bg-card border-primary/30 focus:border-primary rounded-xl h-12 text-foreground"
                         data-testid="select-feedback-category"
                       >
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="product">Product Quality</SelectItem>
-                        <SelectItem value="website">Website Experience</SelectItem>
-                        <SelectItem value="shipping">Shipping & Delivery</SelectItem>
-                        <SelectItem value="customer-service">Customer Service</SelectItem>
-                        <SelectItem value="virtual-try-on">Virtual Try-On Feature</SelectItem>
-                        <SelectItem value="suggestion">General Suggestion</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                      <SelectContent
+                        side="bottom"
+                        align="start"
+                        sideOffset={6}
+                        avoidCollisions={false}
+                        className="bg-card border-primary/30 text-foreground shadow-xl"
+                      >
+                        <SelectItem value="product" className="focus:bg-primary/20 focus:text-foreground">Product Quality</SelectItem>
+                        <SelectItem value="website" className="focus:bg-primary/20 focus:text-foreground">Website Experience</SelectItem>
+                        <SelectItem value="shipping" className="focus:bg-primary/20 focus:text-foreground">Shipping & Delivery</SelectItem>
+                        <SelectItem value="customer-service" className="focus:bg-primary/20 focus:text-foreground">Customer Service</SelectItem>
+                        <SelectItem value="virtual-try-on" className="focus:bg-primary/20 focus:text-foreground">Virtual Try-On Feature</SelectItem>
+                        <SelectItem value="suggestion" className="focus:bg-primary/20 focus:text-foreground">General Suggestion</SelectItem>
+                        <SelectItem value="other" className="focus:bg-primary/20 focus:text-foreground">Other</SelectItem>
                       </SelectContent>
                     </Select>
                   </motion.div>

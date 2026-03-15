@@ -16,6 +16,7 @@ import authRoutes from "./routes/authRoutes.js"; // ✅ Import auth routes
 import feedbackRoutes from "./routes/feedbackRoutes.js"; // ✅ Import feedback routes
 import paymentRoutes from "./routes/PaymentRoutes.js";
 import shoeRoutes from "./routes/ShoeRoutes.js";
+import subscriptionRoutes from "./routes/subscriptionRoutes.js";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/api/shoes", shoeRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api", authRoutes);
 app.use("/api/feedback", feedbackRoutes); // ✅ Add feedback routes
+app.use("/api/subscriptions", subscriptionRoutes);
 
 // Optional: Test route to verify token
 // import { protect } from "./middleware/authMiddleware.js";

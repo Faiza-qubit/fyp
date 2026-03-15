@@ -52,15 +52,10 @@ export default function ShoeCard({ shoe }) {
               ${shoe.price}
             </span>
 
-            <div className="flex gap-1">
-              {shoe.colors?.map((c, i) => (
-                <div
-                  key={i}
-                  className="w-3 h-3 rounded-full border border-yellow-500/30"
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
+            <div
+              className="w-3 h-3 rounded-full border border-yellow-500/30"
+              style={{ backgroundColor: "#000000" }}
+            />
           </div>
         </div>
       </div>

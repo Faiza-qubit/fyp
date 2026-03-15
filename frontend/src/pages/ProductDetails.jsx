@@ -1,18 +1,40 @@
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { SHOES } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Ruler, ShoppingCart, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { addCartItem } from "@/lib/cart";
 
 export default function ProductDetails() {
   const { id } = useParams();
+  const [, setLocation] = useLocation();
   const shoeId = parseInt(id, 10);
   const shoe = SHOES.find((s) => s.id === shoeId);
 
   const [selectedSize, setSelectedSize] = useState(null);
-  const [selectedColor, setSelectedColor] = useState(shoe?.colors?.[0] || "");
+  const selectedColor = shoe?.colors?.[0] || "#000000";
+
+  const handleAddToCart = () => {
+    if (!localStorage.getItem("token")) {
+      setLocation("/login");
+      return;
+    }
+
+    addCartItem({
+      shoeId: shoe.id,
+      name: shoe.name,
+      brand: shoe.brand,
+      price: shoe.price,
+      size: selectedSize || shoe.sizes?.[0],
+      color: selectedColor,
+      colorName: "Default",
+      image: shoe.image,
+    });
+
+    setLocation("/cart");
+  };
 
   if (!shoe)
     return (
@@ -135,43 +157,31 @@ export default function ProductDetails() {
               </div>
             </div>
 
-            {/* COLOR SELECTOR */}
+            {/* COLOR */}
             <div className="mb-8">
-              <span className="text-base font-bold block mb-3">
-                Available Colors
-              </span>
+              <span className="text-base font-bold block mb-3">Color</span>
 
-              <div className="flex gap-4">
-                {shoe.colors?.map((color, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedColor(color)}
-                    className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all ${
-                      selectedColor === color
-                        ? "border-yellow-500 ring-2 ring-yellow-500/40"
-                        : "border-white/10"
-                    }`}
-                    style={{ backgroundColor: color }}
-                  >
-                    {selectedColor === color && (
-                      <div className="w-2 h-2 bg-white rounded-full mix-blend-difference" />
-                    )}
-                  </button>
-                ))}
+              <div className="flex items-center gap-3">
+                <span
+                  className="w-10 h-10 rounded-full border border-yellow-500/40"
+                  style={{ backgroundColor: selectedColor }}
+                />
+                <span className="text-gray-300">Single color variant</span>
               </div>
             </div>
 
             {/* BUTTONS */}
             <div className="flex gap-4 mt-auto">
               {/* Add to Cart */}
-              <Link href="/payment" className="flex-1">
+              <div className="flex-1">
                 <Button
                   size="lg"
+                  onClick={handleAddToCart}
                   className="w-full h-14 text-base font-bold bg-yellow-500 text-black hover:bg-yellow-600 rounded-xl"
                 >
                   <ShoppingCart className="w-5 h-5 mr-2" /> Add to Cart
                 </Button>
-              </Link>
+              </div>
 
               {/* Try On AR */}
               {shoe.arEnabled && (

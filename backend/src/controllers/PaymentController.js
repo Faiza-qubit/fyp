@@ -195,3 +195,23 @@ export const getPaymentsByEmail = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// GET payments for authenticated user
+export const getMyPayments = async (req, res) => {
+  try {
+    const email = req.user?.email;
+
+    if (!email) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const payments = await Payment.find({ email: email.toLowerCase() }).sort({
+      createdAt: -1,
+    });
+
+    return res.status(200).json(payments);
+  } catch (err) {
+    console.error("Error fetching my payments:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
