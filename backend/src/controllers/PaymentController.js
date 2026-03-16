@@ -1,18 +1,20 @@
 import Payment from "../models/Payment.js";
+import Sale from "../models/Sale.js";
+import Shoe from "../models/Shoe.js";
 import Stripe from "stripe";
 
 // Helper function to get Stripe instance
 function getStripe() {
   const stripeKey = process.env.STRIPE_SECRET_KEY;
-  
+
   if (!stripeKey) {
     throw new Error("STRIPE_SECRET_KEY is not set in environment variables");
   }
-  
+
   if (!stripeKey.startsWith("sk_test_") && !stripeKey.startsWith("sk_live_")) {
     throw new Error("STRIPE_SECRET_KEY is invalid - should start with sk_test_ or sk_live_");
   }
-  
+
   return new Stripe(stripeKey);
 }
 
@@ -20,7 +22,7 @@ function getStripe() {
 export const createPaymentIntent = async (req, res) => {
   try {
     const stripe = getStripe();
-    
+
     const {
       amount,
       email,
@@ -67,7 +69,7 @@ export const createPaymentIntent = async (req, res) => {
 export const confirmPayment = async (req, res) => {
   try {
     const stripe = getStripe();
-    
+
     const {
       paymentIntentId,
       fullName,
@@ -115,7 +117,21 @@ export const confirmPayment = async (req, res) => {
         message: `Payment status is '${paymentIntent.status}', not 'succeeded'`,
       });
     }
+    
+    if (shoeId) {
 
+  const shoe = await Shoe.findById(shoeId);
+
+  if (!shoe)
+    return res.status(404).json({ message: "Shoe not found" });
+
+  if (shoe.stock <= 0)
+    return res.status(400).json({
+      success:false,
+      message: "❌ This product is OUT OF STOCK"
+    });
+
+}
     // Create payment record in database
     const payment = new Payment({
       fullName,
@@ -138,6 +154,33 @@ export const confirmPayment = async (req, res) => {
     });
 
     const savedPayment = await payment.save();
+
+    // ===== STOCK REDUCTION + SALE RECORD =====
+
+    if (shoeId) {
+
+      const shoe = await Shoe.findById(shoeId);
+
+      if (!shoe) {
+        return res.status(404).json({ message: "Shoe not found" });
+      }
+
+      // reduce stock
+      if (shoe.stock <= 0) {
+        return res.status(400).json({ message: "Out of stock" });
+      }
+
+      shoe.stock = shoe.stock - 1;
+      await shoe.save();
+
+      // create sale entry
+      await Sale.create({
+        shoeId: shoeId,
+        quantity: 1,
+        totalPrice: amount
+      });
+
+    }
     console.log("Payment saved successfully:", savedPayment._id);
 
     res.status(201).json({

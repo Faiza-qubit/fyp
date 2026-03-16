@@ -17,6 +17,7 @@ import feedbackRoutes from "./routes/feedbackRoutes.js"; // ✅ Import feedback 
 import paymentRoutes from "./routes/PaymentRoutes.js";
 import shoeRoutes from "./routes/ShoeRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 const app = express();
 
@@ -25,12 +26,14 @@ app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+
 // Routes
 app.use("/api/shoes", shoeRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api", authRoutes);
 app.use("/api/feedback", feedbackRoutes); // ✅ Add feedback routes
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/admin", adminRoutes);
 
 // Optional: Test route to verify token
 // import { protect } from "./middleware/authMiddleware.js";
