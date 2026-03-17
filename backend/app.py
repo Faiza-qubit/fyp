@@ -1,9 +1,14 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from ultralytics import YOLO
-import cv2
+import base64
 import numpy as np
+import cv2
 import traceback
+
+# Import your measurement functions
+from measurement import measure_foot, foot_to_shoe_size
 
 app = FastAPI()
 
@@ -16,13 +21,142 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ================= LOAD MODEL =================
-print("Loading YOLO model...")
-model = YOLO("best.pt")
-print("YOLO model loaded successfully\n")
+# ================= LOAD MODELS =================
+print("\n==============================")
+print("Loading YOLO models...")
+
+try:
+    model = YOLO("best.pt")     # Try-on model
+    print("✅ best.pt loaded successfully")
+
+    yolo_measure_model = YOLO("model.pt")   # Measurement model
+    print("✅ model.pt loaded successfully")
+
+except Exception as e:
+    print("❌ Error loading YOLO models")
+    traceback.print_exc()
+
+print("==============================\n")
+
+# ================= DATA MODEL =================
+class ImageData(BaseModel):
+    image: str
 
 
-# ================= INFERENCE =================
+# ================= IMAGE DECODING =================
+def decode_image(base64_string):
+    try:
+        print("📷 Decoding base64 image...")
+
+        image_data = base64_string.split(",")[1]
+        image_bytes = base64.b64decode(image_data)
+
+        np_arr = np.frombuffer(image_bytes, np.uint8)
+        image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+        if image is None:
+            print("❌ cv2.imdecode failed")
+            return None
+
+        print("✅ Image decoded successfully")
+        print("Image shape:", image.shape)
+
+        return image
+
+    except Exception:
+        print("❌ Error decoding image")
+        traceback.print_exc()
+        return None
+
+
+# ================= FOOT MEASUREMENT =================
+def calculate_foot_size(image):
+
+    try:
+        print("\n🚀 Running YOLO measurement model...")
+
+        results = yolo_measure_model(image)
+
+        if results is None:
+            print("❌ YOLO returned no results")
+            return None
+
+        result = results[0]
+
+        if result.boxes is None:
+            print("❌ No boxes detected")
+            return None
+
+        if result.masks is None:
+            print("❌ No masks detected")
+            return None
+
+        masks = result.masks.data.cpu().numpy()
+        classes = result.boxes.cls.cpu().numpy()
+
+        print("Detected objects:", len(classes))
+
+        paper_mask = None
+        foot_mask = None
+
+        for i, cls in enumerate(classes):
+
+            print("Detected class:", int(cls))
+
+            if int(cls) == 0:
+                print("📄 A4 paper detected")
+                paper_mask = masks[i]
+
+            elif int(cls) == 1:
+                print("🦶 Foot detected")
+                foot_mask = masks[i]
+
+        if paper_mask is None:
+            print("❌ Paper not detected")
+
+        if foot_mask is None:
+            print("❌ Foot not detected")
+
+        if paper_mask is None or foot_mask is None:
+            return None
+
+        print("📏 Calculating measurements...")
+
+        result = measure_foot(image, paper_mask, foot_mask)
+
+        if result is None:
+            print("❌ Measurement algorithm failed")
+            return None
+
+        foot_length_cm, foot_width_cm = result
+
+        print("Foot Length:", foot_length_cm)
+        print("Foot Width :", foot_width_cm)
+
+        shoe_size = foot_to_shoe_size(foot_length_cm)
+
+        print("Shoe Size:", shoe_size)
+
+        return {
+            "length": foot_length_cm,
+            "width": foot_width_cm,
+            "size": shoe_size
+        }
+
+    except Exception:
+        print("❌ Error during measurement")
+        traceback.print_exc()
+        return None
+
+
+# ================= ROUTES =================
+@app.get("/")
+def home():
+    print("Home route accessed")
+    return {"message": "Foot Measurement & Try-On API is running"}
+
+
+# ================= TRY-ON API =================
 @app.post("/infer")
 async def infer(file: UploadFile = File(...)):
 
@@ -114,3 +248,37 @@ async def infer(file: UploadFile = File(...)):
         traceback.print_exc()
 
         return {"error": str(e)}
+
+# ================= FOOT MEASUREMENT API =================
+@app.post("/measure")
+async def measure(data: ImageData):
+
+    try:
+        print("\n==============================")
+        print("📥 /measure API CALLED")
+
+        if not data.image:
+            print("❌ No image received")
+            return {"error": "No image received"}
+
+        image = decode_image(data.image)
+
+        if image is None:
+            print("❌ Image decoding failed")
+            return {"error": "Image decoding failed"}
+
+        result = calculate_foot_size(image)
+
+        if result is None:
+            print("⚠️ Foot or paper not detected")
+            return {"error": "Foot or paper not detected"}
+
+        print("✅ Measurement successful")
+        print("==============================\n")
+
+        return result
+
+    except Exception:
+        print("❌ Error in /measure API")
+        traceback.print_exc()
+        return {"error": "Measurement failed"}
