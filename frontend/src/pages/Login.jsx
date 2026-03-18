@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useEffect } from "react";
 
-const API_BASE_URL = "http://localhost:5000/api"; // Update to your backend URL
+const API_BASE_URL = "http://192.168.1.8:5000/api"; // Update to your backend URL
 
 function getApiErrorMessage(err, fallbackMessage) {
   if (err?.response?.data?.message) {

@@ -23,7 +23,7 @@ export default function Cart() {
 
   const total = useMemo(
     () => items.reduce((sum, item) => sum + Number(item.price || 0), 0),
-    [items],
+    [items]
   );
 
   if (!isLoggedIn) {
@@ -62,9 +62,10 @@ export default function Cart() {
           </Card>
         ) : (
           <div className="space-y-4">
+
             {items.map((item) => (
               <Card
-                key={item.id}
+                key={item.cartItemId}
                 className="p-4 bg-neutral-900 border border-white/10 flex items-center gap-4"
               >
                 <img
@@ -72,16 +73,22 @@ export default function Cart() {
                   alt={item.name}
                   className="w-20 h-20 object-cover rounded-md"
                 />
+
                 <div className="flex-1">
                   <p className="font-semibold">{item.name}</p>
                   <p className="text-sm text-gray-400">Size: US {item.size}</p>
                   <p className="text-sm text-gray-400">Color: {item.colorName}</p>
+
+                  {/* DEBUG */}
+                  <p className="text-xs text-gray-500">ID: {item.shoeId}</p>
                 </div>
+
                 <p className="font-bold text-yellow-500">${item.price}</p>
+
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => removeCartItem(item.id)}
+                  onClick={() => removeCartItem(item.cartItemId)}
                   className="text-gray-300 hover:text-red-400"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -89,18 +96,24 @@ export default function Cart() {
               </Card>
             ))}
 
+            {/* ⭐ ORDER SUMMARY + CHECKOUT BUTTON */}
             <Card className="p-6 bg-neutral-900 border border-white/10 mt-6">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-lg">Total</p>
-                <p className="text-2xl font-bold text-yellow-500">${total.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-yellow-500">
+                  ${total.toFixed(2)}
+                </p>
               </div>
+
               <Button
                 className="w-full bg-yellow-500 text-black hover:bg-yellow-400"
                 onClick={() => setLocation("/payment")}
               >
-                Proceed to Payment <ArrowRight className="w-4 h-4 ml-2" />
+                Proceed to Payment
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Card>
+
           </div>
         )}
       </div>

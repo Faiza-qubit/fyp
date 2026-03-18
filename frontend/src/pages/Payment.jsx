@@ -67,6 +67,9 @@ function PaymentForm() {
   };
 
   const handleSubmit = async (e) => {
+    const firstItem = cartItems[0];
+    const shoeId = firstItem?.shoeId;
+    const shoeColor = firstItem?.colorName;
     e.preventDefault();
 
     if (!stripe || !elements) {
@@ -102,14 +105,18 @@ function PaymentForm() {
 
     try {
       // Step 1: Create payment intent
+      const firstItem = cartItems[0];
+
       const intentResponse = await axios.post(
         `${API_BASE_URL}/payments/create-intent`,
         {
           amount: totalAmount,
           email: formData.email,
           fullName: formData.fullName,
-          shoeSize: formData.shoeSize,
-        }
+          shoeId: firstItem?.shoeId,
+          shoeSize: firstItem?.size,
+          shoeColor: firstItem?.colorName,
+        },
       );
 
       if (!intentResponse.data.success) {
@@ -144,7 +151,7 @@ function PaymentForm() {
         // Step 3: Confirm payment in backend
         try {
           await axios.post(`${API_BASE_URL}/payments/confirm`, {
-            paymentIntentId: paymentIntentId,
+            paymentIntentId,
             fullName: formData.fullName,
             email: formData.email,
             phone: formData.phone,
@@ -152,25 +159,33 @@ function PaymentForm() {
             city: formData.city,
             zipCode: formData.zipCode,
             country: formData.country,
-            shoeSize: formData.shoeSize,
+            shoeId: firstItem?.shoeId,
+            shoeSize: firstItem?.size,
+            shoeColor: firstItem?.colorName,
             amount: totalAmount,
           });
           clearCart();
           setSuccessMessage({
             title: "Payment Confirmed",
-            description: "Thank you for your purchase. Your order is now being prepared.",
+            description:
+              "Thank you for your purchase. Your order is now being prepared.",
           });
         } catch (backendError) {
           console.error("Backend confirmation error:", backendError);
           toast({
             title: "Payment Recorded",
-            description: "Your payment was successful but there was an issue saving the order. Please contact support.",
+            description:
+              "Your payment was successful but there was an issue saving the order. Please contact support.",
           });
         }
-      } else if (result.paymentIntent && result.paymentIntent.status === "requires_action") {
+      } else if (
+        result.paymentIntent &&
+        result.paymentIntent.status === "requires_action"
+      ) {
         toast({
           title: "Additional Authentication Required",
-          description: "Please complete the additional authentication step in the popup.",
+          description:
+            "Please complete the additional authentication step in the popup.",
           variant: "destructive",
         });
       } else {

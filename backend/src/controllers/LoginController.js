@@ -184,32 +184,32 @@ export const forgotPassword = async (req, res) => {
 // --------------------------- UPDATE FOOT PROFILE ---------------------------
 export const updateFootProfile = async (req, res) => {
   try {
-    const userId = req.user?.userId;
-    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const { footLengthCm, footWidthCm, euSize, usSize } = req.body;
 
-    const { footLengthCm = "", footWidthCm = "", recommendedSize = "" } = req.body;
+    // ⭐ CORRECT USER ID
+    const user = await User.findById(req.user.userId);
 
-    const user = await User.findByIdAndUpdate(
-      userId,
-      {
-        footProfile: {
-          footLengthCm,
-          footWidthCm,
-          recommendedSize,
-        },
-      },
-      { new: true, runValidators: true },
-    ).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    user.footProfile = {
+      footLengthCm,
+      footWidthCm,
+      euSize,
+      usSize,
+    };
 
-    return res.status(200).json({
+    await user.save();
+
+    res.json({
       success: true,
       message: "Foot profile updated successfully",
-      user,
+      footProfile: user.footProfile,
     });
-  } catch (err) {
-    console.error("Update foot profile error:", err);
-    return res.status(500).json({ success: false, message: "Server error", error: err.message });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Server Error" });
   }
 };

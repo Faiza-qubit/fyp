@@ -35,10 +35,10 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 
-const categories = ["Running", "Casual", "Formal", "Sneakers"];
+const categories = ["Running", "Casual", "Training", "Sneakers", "BasketBall"];
 const genders = ["Men", "Women", "Unisex"];
-const brands = ["Nike", "Adidas", "Puma", "Clarks", "Gucci", "Jordan", "New Balance"];
-const colors = ["Black", "White", "Red", "Blue", "Green", "Gold", "Gray"];
+const brands = ["Nike", "Adidas", "Puma", "Clarks", "Jordan"];
+const colors = ["Black", "White", "Red", "Blue", "Green", "Gold", "Gray", "Brown"];
 
 export default function Admin() {
   const [shoes, setShoes] = useState([]);
@@ -55,7 +55,7 @@ export default function Admin() {
     gender: "",
     color: "",
     description: "",
-    sizes: "8,9,10,11,12",
+    sizes: "5,6,7,8,9,10,11,12,13",
     stock: "",
     image: "https://via.placeholder.com/400",
     arEnabled: false,
@@ -251,7 +251,7 @@ const handleDelete = async (id) => {
                       <SelectTrigger className="bg-neutral-800 border-white/10">
                         <SelectValue placeholder="Select brand" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-neutral-900 border border-white/10 backdrop-blur-none z-50">
                         {brands.map((b) => (
                           <SelectItem key={b} value={b}>
                             {b}
@@ -283,7 +283,7 @@ const handleDelete = async (id) => {
                       <SelectTrigger className="bg-neutral-800 border-white/10">
                         <SelectValue placeholder="Category" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-neutral-900 border border-white/10 backdrop-blur-none z-50">
                         {categories.map((c) => (
                           <SelectItem key={c} value={c}>
                             {c}
@@ -301,7 +301,7 @@ const handleDelete = async (id) => {
                       <SelectTrigger className="bg-neutral-800 border-white/10">
                         <SelectValue placeholder="Gender" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-neutral-900 border border-white/10 backdrop-blur-none z-50">
                         {genders.map((g) => (
                           <SelectItem key={g} value={g}>
                             {g}
@@ -323,7 +323,7 @@ const handleDelete = async (id) => {
                       <SelectTrigger className="bg-neutral-800 border-white/10">
                         <SelectValue placeholder="Color" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-neutral-900 border border-white/10 backdrop-blur-none z-50">
                         {colors.map((c) => (
                           <SelectItem key={c} value={c}>
                             {c}

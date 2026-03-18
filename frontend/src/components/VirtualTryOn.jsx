@@ -2,7 +2,7 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Scan, Footprints, Sparkles, Check, ArrowRight, Smartphone, Zap, Camera } from "lucide-react";
 import { motion } from "framer-motion";
-import heroShoe from "../assets/hero_luxury_sneaker_spotlight.png";
+import heroShoe from "../assets/nike_flex_motion1.png";
 
 const steps = [
   {
@@ -255,6 +255,7 @@ export default function VirtualTryOn() {
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
                   size="lg"
+                  onClick={() => navigate("/shop")}
                   className="bg-gradient-to-r from-primary to-yellow-500 hover:from-primary/90 hover:to-yellow-500/90 text-primary-foreground font-semibold rounded-full px-8 gap-2 w-full sm:w-auto shadow-xl shadow-primary/25"
                 >
                   Start Virtual Try-On

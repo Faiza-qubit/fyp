@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Award, RotateCcw, Scan, Shield, Zap } from "lucide-react";
 import { useLocation } from "wouter";
-import heroShoe from "../assets/hero_luxury_sneaker_spotlight.png";
+import heroShoe from "../assets/nike_flex_motion1.png";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 // Or use: UserCog, Settings, Lock, Crown for a more premium feel

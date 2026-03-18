@@ -26,10 +26,11 @@ const UserSchema = new mongoose.Schema(
     },
 
     footProfile: {
-      footLengthCm: { type: String, default: "" },
-      footWidthCm: { type: String, default: "" },
-      recommendedSize: { type: String, default: "" },
-    },
+  footLengthCm: { type: Number, default: 0 },
+  footWidthCm: { type: Number, default: 0 },
+  euSize: { type: Number, default: 0 },
+  usSize: { type: Number, default: 0 }
+},
   },
   { timestamps: true }
 );

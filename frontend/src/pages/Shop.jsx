@@ -26,9 +26,9 @@ export default function Shop() {
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [sortOrder, setSortOrder] = useState("featured");
 
-  const categories = ["Running", "Casual", "Formal", "Sneakers"];
+  const categories = ["Running", "Casual", "Training", "Sneakers", "Basketball"];
   const genders = ["Men", "Women", "Unisex"];
-  const brands = ["Nike", "Adidas", "Puma", "Clarks", "Gucci"];
+  const brands = ["Nike", "Adidas", "Puma", "Clarks", "Jordan"];
 
   const categoriesCounts = useMemo(() => {
     const counts = {};
@@ -404,7 +404,7 @@ export default function Shop() {
               <AnimatePresence>
                 {filteredShoes.map((shoe, index) => (
                   <motion.div
-                    key={shoe.id}
+                    key={shoe._id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
@@ -414,7 +414,12 @@ export default function Shop() {
                       ease: "easeOut",
                     }}
                   >
-                    <ShoeCard shoe={shoe} />
+                    <ShoeCard
+                shoe={{
+                  ...shoe,
+                  image: shoe.images?.[1],
+                }}
+              />
                   </motion.div>
                 ))}
               </AnimatePresence>

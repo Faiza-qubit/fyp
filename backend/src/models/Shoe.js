@@ -9,7 +9,7 @@ const shoeSchema = new mongoose.Schema({
   brand: {
     type: String,
     required: true,
-    enum: ["Nike", "Adidas", "Puma", "Clarks", "Gucci", "Jordan", "New Balance"],
+    enum: ["Nike", "Adidas", "Puma", "Clarks", "Jordan"],
   },
 
   price: {
@@ -20,7 +20,7 @@ const shoeSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ["Running", "Casual", "Formal", "Sneakers"],
+    enum: ["Running", "Casual", "Training", "Sneakers", "BasketBall"],
   },
 
   gender: {
@@ -32,7 +32,7 @@ const shoeSchema = new mongoose.Schema({
   color: {
     type: String,
     required: true,
-    enum: ["Black", "White", "Red", "Blue", "Green", "Gold", "Gray"],
+    enum: ["Black", "White", "Red", "Blue", "Green", "Gold", "Gray", "Brown"],
   },
 
   description: {

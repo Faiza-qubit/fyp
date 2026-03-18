@@ -17,15 +17,25 @@ export function saveCartItems(items) {
 
 export function addCartItem(item) {
   const cart = getCartItems();
-  cart.push({
-    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    ...item,
-  });
+
+  const newItem = {
+    cartItemId: `${Date.now()}-${Math.random().toString(16).slice(2)}`, // ⭐ UI id
+    shoeId: item.shoeId,   // ⭐ VERY IMPORTANT (backend id)
+    name: item.name,
+    price: item.price,
+    size: item.size,
+    image: item.image,
+    colorName: item.colorName,
+  };
+
+  cart.push(newItem);
   saveCartItems(cart);
 }
 
-export function removeCartItem(itemId) {
-  const cart = getCartItems().filter((item) => item.id !== itemId);
+export function removeCartItem(cartItemId) {
+  const cart = getCartItems().filter(
+    (item) => item.cartItemId !== cartItemId
+  );
   saveCartItems(cart);
 }
 

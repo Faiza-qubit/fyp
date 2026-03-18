@@ -7,25 +7,26 @@ import { TooltipProvider } from "../src/components/ui/tooltip";
 import { queryClient } from "./lib/queryClient";
 
 // Pages
-import Admin from "../src/pages/Admin";
-import AdminLogin from "../src/pages/AdminLogin";
-import About from "../src/pages/About";
-import Home from "../src/pages/Home";
-import Login from "../src/pages/Login";
-import NotFound from "../src/pages/not-found";
-import NewArrivals from "../src/pages/NewArrivals";
-import Payment from "../src/pages/Payment";
-import ProductDetails from "../src/pages/ProductDetails";
-import Profile from "../src/pages/Profile";
-import Shop from "../src/pages/Shop";
-import StockAnalysis from "../src/pages/StockAnalysis";
-import Cart from "../src/pages/Cart";
-import Collections from "../src/pages/Collections";
-import VirtualTryOnPage from "../src/pages/VirtualTryOnPage";
-
-// Layout
+import Admin from "./pages/Admin";
+import AdminLogin from "./pages/AdminLogin";
+import About from "./pages/About";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import NotFound from "./pages/not-found";
+import NewArrivals from "./pages/NewArrivals";
+import Payment from "./pages/Payment";
+import ProductDetails from "./pages/ProductDetails";
+import Profile from "./pages/Profile";
+import Shop from "./pages/Shop";
+import StockAnalysis from "./pages/StockAnalysis";
+import Cart from "./pages/Cart";
+import Collections from "./pages/Collections";
+import VirtualTryOnPage from "./pages/VirtualTryOnPage";
+import MeasureFeet from "./pages/measureFeet";
+import FootTryOn from "./pages/FootTryOn";
 import Footer from "./components/Footer";
 import Navigation from "./components/Navigation";
+
 
 function ScrollToTopOnRouteChange() {
   const [location] = useLocation();
@@ -40,16 +41,33 @@ function ScrollToTopOnRouteChange() {
 function Router({ isLoggedIn, setIsLoggedIn }) {
   return (
     <Switch>
-      {/* Public Routes */}
+
+      {/* Public */}
       <Route path="/" component={Home} />
       <Route path="/new-arrivals" component={NewArrivals} />
       <Route path="/collections" component={Collections} />
-      <Route path="/virtual-try-on" component={VirtualTryOnPage} />
       <Route path="/about" component={About} />
+
+      {/* Measure Feet Page */}
+      <ProtectedRoute
+        path="/measure-feet"
+        component={MeasureFeet}
+        isLoggedIn={isLoggedIn}
+      />
+
+      {/* Virtual Try On Page */}
+      <ProtectedRoute
+        path="/foot-try-on"
+        component={FootTryOn}
+        isLoggedIn={isLoggedIn}
+      />
+
+      {/* Existing */}
       <ProtectedRoute path="/shop" component={Shop} isLoggedIn={isLoggedIn} />
       <ProtectedRoute path="/product/:id" component={ProductDetails} isLoggedIn={isLoggedIn} />
       <ProtectedRoute path="/cart" component={Cart} isLoggedIn={isLoggedIn} />
       <ProtectedRoute path="/profile" component={Profile} isLoggedIn={isLoggedIn} />
+
       <Route path="/payment" component={Payment} />
       <Route path="/login" component={() => <Login setIsLoggedIn={setIsLoggedIn} />} />
 
@@ -58,12 +76,10 @@ function Router({ isLoggedIn, setIsLoggedIn }) {
       <Route path="/admin" component={Admin} />
       <Route path="/stock-analysis" component={StockAnalysis} />
 
-      {/* 404 */}
       <Route component={NotFound} />
     </Switch>
   );
 }
-
 function App() {
   // ✅ Track login state dynamically
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
