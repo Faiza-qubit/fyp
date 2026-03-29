@@ -4,6 +4,7 @@ import {
 	login,
 	getCurrentUser,
 	forgotPassword,
+	refreshTokenHandler,
 	updateFootProfile,
 } from "../controllers/LoginController.js";
 import { protect } from "../middleware/authMiddleware.js";
@@ -15,6 +16,9 @@ router.post("/signup", signup);
 
 // POST /api/login
 router.post("/login", login);
+
+// POST /api/refresh
+router.post("/refresh", refreshTokenHandler);
 
 // POST /api/forgot-password
 router.post("/forgot-password", forgotPassword);

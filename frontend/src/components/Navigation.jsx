@@ -54,8 +54,21 @@ export default function Navigation({ isLoggedIn }) {
   };
 
   const handleTryVirtualFitClick = () => {
-    setLocation("/virtual-try-on");
-  };
+  const section = document.getElementById("try-on");
+
+  if (section) {
+    section.scrollIntoView({ behavior: "smooth" });
+  } else {
+    // fallback if user is on another page
+    setLocation("/");
+    setTimeout(() => {
+      const section = document.getElementById("try-on");
+      if (section) {
+        section.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 300);
+  }
+};
 
   const handleCartClick = () => {
     const hasToken = !!localStorage.getItem("token");

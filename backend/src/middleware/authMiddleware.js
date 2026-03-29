@@ -13,18 +13,37 @@ export const protect = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
+    // ❌ No token
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "Unauthorized: No token provided" });
+      return res.status(401).json({
+        success: false,
+        message: "NO_TOKEN",
+      });
     }
 
     const token = authHeader.split(" ")[1];
 
+    // ✅ Verify token
     const decoded = jwt.verify(token, getJwtSecret());
-    req.user = decoded; // Attach user info to request
+
+    // Attach user
+    req.user = decoded;
 
     next();
+
   } catch (err) {
-    console.error("Auth middleware error:", err);
-    return res.status(401).json({ message: "Unauthorized: Invalid token", error: err.message });
+    console.error("Auth middleware error:", err.message);
+
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "TOKEN_EXPIRED",
+      });
+    }
+    
+    return res.status(401).json({
+      success: false,
+      message: "INVALID_TOKEN",
+    });
   }
 };

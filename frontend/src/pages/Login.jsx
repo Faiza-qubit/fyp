@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useEffect } from "react";
 
-const API_BASE_URL = "http://192.168.1.8:5000/api"; // Update to your backend URL
+const API_BASE_URL = "http://192.168.1.7:5000/api"; // Update to your backend URL
 
 function getApiErrorMessage(err, fallbackMessage) {
   if (err?.response?.data?.message) {
@@ -62,11 +62,15 @@ export default function Login({ setIsLoggedIn }) {
         isSignUp ? { name, email, password } : { email, password },
       );
 
-      const { token, user } = response.data;
-      if (!token) throw new Error("No token received from backend");
+      const { accessToken, refreshToken, user } = response.data;
 
-      // SAVE AUTH DATA
-      localStorage.setItem("token", token);
+      if (!accessToken || !refreshToken) {
+        throw new Error("Tokens not received from backend");
+      }
+
+      // ✅ STORE BOTH TOKENS
+      localStorage.setItem("token", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
       localStorage.setItem("user", JSON.stringify(user));
       window.dispatchEvent(new Event("auth-changed"));
 
@@ -181,14 +185,19 @@ export default function Login({ setIsLoggedIn }) {
               {isForgotMode
                 ? "Set a new password for your account"
                 : isSignUp
-                ? "Sign up to start shopping"
-                : "Sign in to access Quick Add features"}
+                  ? "Sign up to start shopping"
+                  : "Sign in to access Quick Add features"}
             </p>
             {error && <p className="text-red-500 mt-2">{error}</p>}
-            {resetMessage && <p className="text-green-500 mt-2">{resetMessage}</p>}
+            {resetMessage && (
+              <p className="text-green-500 mt-2">{resetMessage}</p>
+            )}
           </div>
 
-          <form onSubmit={isForgotMode ? handleForgotPassword : handleSubmit} className="space-y-5">
+          <form
+            onSubmit={isForgotMode ? handleForgotPassword : handleSubmit}
+            className="space-y-5"
+          >
             {isSignUp && !isForgotMode && (
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-foreground font-medium">
@@ -229,10 +238,16 @@ export default function Login({ setIsLoggedIn }) {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder={isForgotMode ? "Enter your new password" : "Enter your password"}
+                  placeholder={
+                    isForgotMode
+                      ? "Enter your new password"
+                      : "Enter your password"
+                  }
                   value={isForgotMode ? resetPassword : password}
                   onChange={(e) =>
-                    isForgotMode ? setResetPassword(e.target.value) : setPassword(e.target.value)
+                    isForgotMode
+                      ? setResetPassword(e.target.value)
+                      : setPassword(e.target.value)
                   }
                   required
                   disabled={isLoading}
@@ -249,7 +264,10 @@ export default function Login({ setIsLoggedIn }) {
 
             {isForgotMode && (
               <div className="space-y-2">
-                <Label htmlFor="confirm-password" className="text-foreground font-medium">
+                <Label
+                  htmlFor="confirm-password"
+                  className="text-foreground font-medium"
+                >
                   Confirm New Password
                 </Label>
                 <Input

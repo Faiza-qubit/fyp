@@ -9,7 +9,7 @@ export default function FootMeasurement() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-  // ⭐ Open Camera
+  // Open Camera
   useEffect(() => {
     let stream;
 
@@ -55,8 +55,8 @@ export default function FootMeasurement() {
   setResult(null);
 
   try {
-    // ⭐ CALL AI SERVER
-    const response = await fetch("http://192.168.1.8:8000/measure", {
+    // CALL AI SERVER
+    const response = await fetch("http://192.168.1.7:8000/measure", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -78,7 +78,7 @@ export default function FootMeasurement() {
     try {
       const token = localStorage.getItem("token");
         await axios.put(
-      "http://192.168.1.8:5000/api/profile/foot-size",
+      "http://192.168.1.3:5000/api/profile/foot-size",
         {
           footLengthCm: data.length,
           footWidthCm: data.width,

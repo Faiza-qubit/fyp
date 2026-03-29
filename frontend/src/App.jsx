@@ -26,7 +26,7 @@ import MeasureFeet from "./pages/measureFeet";
 import FootTryOn from "./pages/FootTryOn";
 import Footer from "./components/Footer";
 import Navigation from "./components/Navigation";
-
+import VirtualTryOn from "./components/VirtualTryOn";
 
 function ScrollToTopOnRouteChange() {
   const [location] = useLocation();
@@ -41,12 +41,12 @@ function ScrollToTopOnRouteChange() {
 function Router({ isLoggedIn, setIsLoggedIn }) {
   return (
     <Switch>
-
       {/* Public */}
       <Route path="/" component={Home} />
       <Route path="/new-arrivals" component={NewArrivals} />
       <Route path="/collections" component={Collections} />
       <Route path="/about" component={About} />
+      <Route path="/virtual-try-on" component={VirtualTryOn} />
 
       {/* Measure Feet Page */}
       <ProtectedRoute
@@ -57,19 +57,30 @@ function Router({ isLoggedIn, setIsLoggedIn }) {
 
       {/* Virtual Try On Page */}
       <ProtectedRoute
-        path="/foot-try-on"
-        component={FootTryOn}
+        path="/virtual-try-on/:id"
+        component={VirtualTryOnPage}
         isLoggedIn={isLoggedIn}
       />
 
       {/* Existing */}
       <ProtectedRoute path="/shop" component={Shop} isLoggedIn={isLoggedIn} />
-      <ProtectedRoute path="/product/:id" component={ProductDetails} isLoggedIn={isLoggedIn} />
+      <ProtectedRoute
+        path="/product/:id"
+        component={ProductDetails}
+        isLoggedIn={isLoggedIn}
+      />
       <ProtectedRoute path="/cart" component={Cart} isLoggedIn={isLoggedIn} />
-      <ProtectedRoute path="/profile" component={Profile} isLoggedIn={isLoggedIn} />
+      <ProtectedRoute
+        path="/profile"
+        component={Profile}
+        isLoggedIn={isLoggedIn}
+      />
 
       <Route path="/payment" component={Payment} />
-      <Route path="/login" component={() => <Login setIsLoggedIn={setIsLoggedIn} />} />
+      <Route
+        path="/login"
+        component={() => <Login setIsLoggedIn={setIsLoggedIn} />}
+      />
 
       {/* Admin */}
       <Route path="/admin-login" component={AdminLogin} />
@@ -87,7 +98,8 @@ function App() {
   // Optional: listen to changes in localStorage (multi-tab support)
   useEffect(() => {
     const handleStorage = () => setIsLoggedIn(!!localStorage.getItem("token"));
-    const handleAuthChanged = () => setIsLoggedIn(!!localStorage.getItem("token"));
+    const handleAuthChanged = () =>
+      setIsLoggedIn(!!localStorage.getItem("token"));
     window.addEventListener("storage", handleStorage);
     window.addEventListener("auth-changed", handleAuthChanged);
 

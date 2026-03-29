@@ -2,6 +2,7 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Scan, Footprints, Sparkles, Check, ArrowRight, Smartphone, Zap, Camera } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLocation } from "wouter";
 import heroShoe from "../assets/nike_flex_motion1.png";
 
 const steps = [
@@ -28,6 +29,7 @@ const steps = [
 const scanLines = Array.from({ length: 8 }, (_, i) => i);
 
 export default function VirtualTryOn() {
+  const [, navigate] = useLocation();
   return (
     <section id="try-on" className="relative py-24 overflow-hidden bg-gradient-to-b from-background via-card/30 to-background">
       <div className="absolute inset-0 overflow-hidden">
@@ -258,7 +260,7 @@ export default function VirtualTryOn() {
                   onClick={() => navigate("/shop")}
                   className="bg-gradient-to-r from-primary to-yellow-500 hover:from-primary/90 hover:to-yellow-500/90 text-primary-foreground font-semibold rounded-full px-8 gap-2 w-full sm:w-auto shadow-xl shadow-primary/25"
                 >
-                  Start Virtual Try-On
+                  Select Shoe & Start Virtual Try-On
                   <motion.span
                     animate={{ x: [0, 5, 0] }}
                     transition={{ duration: 1, repeat: Infinity }}

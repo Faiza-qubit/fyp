@@ -3,372 +3,296 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 /* ================= BACKEND ================= */
-const INFER_URL = "http://192.168.1.8:8000/infer";
+const INFER_URL = "http://192.168.1.7:8000/infer";
 
-export default function FootTryOn() {
+export default function FootTryOn({ modelPath }) {
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const threeCanvasRef = useRef(null);
+  const statusRef = useRef(null);
 
-const videoRef = useRef(null);
-const canvasRef = useRef(null);
-const threeCanvasRef = useRef(null);
-const statusRef = useRef(null);
+  /* ================= TRACK MEMORY ================= */
 
-/* ================= TRACK MEMORY ================= */
+  const tracks = useRef([
+    { pos: new THREE.Vector3(), scale: 1, rot: 0, lastSeen: 0 },
+    { pos: new THREE.Vector3(), scale: 1, rot: 0, lastSeen: 0 },
+  ]);
 
-const tracks = useRef([
-  { pos:new THREE.Vector3(), scale:1, rot:0, lastSeen:0 },
-  { pos:new THREE.Vector3(), scale:1, rot:0, lastSeen:0 }
-]);
+  const shoes = useRef([null, null]);
 
-const shoes = useRef([null,null]);
+  useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
 
-useEffect(()=>{
+    /* ================= THREE ================= */
 
-const video = videoRef.current;
-const canvas = canvasRef.current;
-const ctx = canvas.getContext("2d");
+    const scene = new THREE.Scene();
 
-/* ================= THREE ================= */
+    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 3000);
+    camera.position.z = 1000;
 
-const scene = new THREE.Scene();
+    const renderer = new THREE.WebGLRenderer({
+      canvas: threeCanvasRef.current,
+      alpha: true,
+      antialias: true,
+    });
 
-const camera = new THREE.PerspectiveCamera(
-60,1,0.1,3000
-);
-camera.position.z = 1000;
+    renderer.setPixelRatio(window.devicePixelRatio);
 
-const renderer = new THREE.WebGLRenderer({
-canvas:threeCanvasRef.current,
-alpha:true,
-antialias:true
-});
+    scene.add(new THREE.AmbientLight(0xffffff, 1.8));
 
-renderer.setPixelRatio(window.devicePixelRatio);
+    const light = new THREE.DirectionalLight(0xffffff, 1);
+    light.position.set(0, 1000, 1000);
+    scene.add(light);
 
-scene.add(new THREE.AmbientLight(0xffffff,1.8));
+    /* ================= LOAD SHOES ================= */
 
-const light=new THREE.DirectionalLight(0xffffff,1);
-light.position.set(0,1000,1000);
-scene.add(light);
+    const loader = new GLTFLoader();
 
-/* ================= LOAD SHOES ================= */
+    for (let i = 0; i < 2; i++) {
+      loader.load(modelPath, (gltf) => {
+        const shoe = gltf.scene;
 
-const loader=new GLTFLoader();
+        /* FIX PIVOT */
+        const box = new THREE.Box3().setFromObject(shoe);
+        const center = box.getCenter(new THREE.Vector3());
+        shoe.position.sub(center);
 
-for(let i=0;i<2;i++){
+        const wrap = new THREE.Group();
+        wrap.add(shoe);
+        wrap.visible = false;
 
-loader.load("/winter_shoe.glb",(gltf)=>{
+        scene.add(wrap);
+        shoes.current[i] = wrap;
+      });
+    }
 
-const shoe=gltf.scene;
+    /* ================= PIXEL → WORLD ================= */
 
-/* FIX PIVOT */
-const box=new THREE.Box3().setFromObject(shoe);
-const center=box.getCenter(new THREE.Vector3());
-shoe.position.sub(center);
+    function worldFromPixel(x, y) {
+      const nx = (x / video.videoWidth) * 2 - 1;
+      const ny = -(y / video.videoHeight) * 2 + 1;
 
-const wrap=new THREE.Group();
-wrap.add(shoe);
-wrap.visible=false;
+      const vec = new THREE.Vector3(nx, ny, 0.5).unproject(camera);
 
-scene.add(wrap);
-shoes.current[i]=wrap;
+      const dir = vec.sub(camera.position).normalize();
 
-});
-}
+      return camera.position.clone().add(dir.multiplyScalar(1000));
+    }
 
-/* ================= PIXEL → WORLD ================= */
+    /* ================= TRACK UPDATE ================= */
 
-function worldFromPixel(x,y){
+    function updateTrack(det, id) {
+      const state = tracks.current[id];
 
-const nx=(x/video.videoWidth)*2-1;
-const ny=-(y/video.videoHeight)*2+1;
+      const [x1, y1, x2, y2] = det.bbox;
 
-const vec=new THREE.Vector3(nx,ny,0.5)
-.unproject(camera);
+      const cx = (x1 + x2) / 2;
+      const cy = (y1 + y2) / 2;
 
-const dir=vec.sub(camera.position)
-.normalize();
+      const world = worldFromPixel(cx, cy);
 
-return camera.position
-.clone()
-.add(dir.multiplyScalar(1000));
-}
+      /* POSITION SMOOTH */
 
-/* ================= TRACK UPDATE ================= */
+      state.pos.lerp(world, 0.15);
 
-function updateTrack(det,id){
+      /* SCALE FROM BBOX */
 
-const state=tracks.current[id];
+      const width = x2 - x1;
+      const targetScale = width / 220;
 
-const [x1,y1,x2,y2]=det.bbox;
+      state.scale = THREE.MathUtils.lerp(state.scale, targetScale, 0.12);
 
-const cx=(x1+x2)/2;
-const cy=(y1+y2)/2;
+      /* ROTATION FROM KEYPOINTS */
 
-const world=worldFromPixel(cx,cy);
+      if (det.keypoints?.length >= 2) {
+        const ankle = det.keypoints[0];
+        const toe = det.keypoints.at(-1);
 
-/* POSITION SMOOTH */
+        const dx = toe[0] - ankle[0];
+        const dy = toe[1] - ankle[1];
 
-state.pos.lerp(world,0.15);
+        const angle = Math.atan2(dy, dx);
 
-/* SCALE FROM BBOX */
+        state.rot = THREE.MathUtils.lerp(state.rot, angle, 0.15);
+      }
 
-const width=x2-x1;
-const targetScale=width/220;
+      state.lastSeen = performance.now();
+    }
 
-state.scale=
-THREE.MathUtils.lerp(
-state.scale,
-targetScale,
-0.12
-);
+    /* ================= APPLY SHOE ================= */
 
-/* ROTATION FROM KEYPOINTS */
+    function applyShoe(id) {
+      const shoe = shoes.current[id];
+      const state = tracks.current[id];
 
-if(det.keypoints?.length>=2){
+      if (!shoe) return;
 
-const ankle=det.keypoints[0];
-const toe=det.keypoints.at(-1);
+      /* increased timeout */
 
-const dx=toe[0]-ankle[0];
-const dy=toe[1]-ankle[1];
+      if (performance.now() - state.lastSeen > 2000) {
+        shoe.visible = false;
+        return;
+      }
 
-const angle=Math.atan2(dy,dx);
+      shoe.visible = true;
 
-state.rot=
-THREE.MathUtils.lerp(
-state.rot,
-angle,
-0.15
-);
-}
+      shoe.position.copy(state.pos);
 
-state.lastSeen=performance.now();
-}
+      /* RIGHT FOOT */
 
-/* ================= APPLY SHOE ================= */
+      if (id === 1) {
+        shoe.rotation.set(-Math.PI / 2, -state.rot, Math.PI);
 
-function applyShoe(id){
+        shoe.scale.setScalar(state.scale);
+      } else {
 
-const shoe = shoes.current[id];
-const state = tracks.current[id];
+      /* LEFT FOOT */
+        shoe.rotation.set(-Math.PI / 2, -state.rot + Math.PI, Math.PI);
 
-if(!shoe) return;
+        shoe.scale.setScalar(state.scale);
+      }
+    }
 
-/* increased timeout */
+    /* ================= DRAW BOXES ================= */
 
-if(performance.now() - state.lastSeen > 2000){
-shoe.visible=false;
-return;
-}
+    function drawBoxes(dets) {
+      ctx.strokeStyle = "black";
+      ctx.lineWidth = 5;
 
-shoe.visible=true;
+      dets.forEach((det) => {
+        const [x1, y1, x2, y2] = det.bbox;
+        ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+      });
+    }
 
-shoe.position.copy(state.pos);
+    /* ================= CAMERA ================= */
 
-/* RIGHT FOOT */
+    navigator.mediaDevices
+      .getUserMedia({
+        video: { facingMode: "environment" },
+      })
+      .then((stream) => {
+        video.srcObject = stream;
+        video.onloadedmetadata = () => video.play();
+        statusRef.current.innerText = "Camera ready";
+      });
 
-if(id===1){
+    /* ================= MAIN LOOP ================= */
 
-shoe.rotation.set(
- -Math.PI/2,
- -state.rot,
- Math.PI
-);
+    let busy = false;
+    let lastInfer = 0;
 
-shoe.scale.setScalar(state.scale);
+    async function loop() {
+      if (!video.videoWidth) {
+        requestAnimationFrame(loop);
+        return;
+      }
 
-}
+      /* resize */
 
-/* LEFT FOOT */
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
 
-else{
+      renderer.setSize(video.videoWidth, video.videoHeight, false);
 
-shoe.rotation.set(
- -Math.PI/2,
- -state.rot + Math.PI,
- Math.PI
-);
+      camera.aspect = video.videoWidth / video.videoHeight;
 
-shoe.scale.setScalar(state.scale);
+      camera.updateProjectionMatrix();
 
-}
+      /* draw camera */
 
-}
+      ctx.drawImage(video, 0, 0);
 
-/* ================= DRAW BOXES ================= */
+      const now = performance.now();
 
-function drawBoxes(dets){
+      /* YOLO inference */
 
-ctx.strokeStyle="black";
-ctx.lineWidth=5;
+      if (!busy && now - lastInfer > 350) {
+        busy = true;
+        lastInfer = now;
 
-dets.forEach(det=>{
-const[x1,y1,x2,y2]=det.bbox;
-ctx.strokeRect(x1,y1,x2-x1,y2-y1);
-});
-}
+        canvas.toBlob(
+          async (blob) => {
+            try {
+              const form = new FormData();
+              form.append("file", blob);
 
-/* ================= CAMERA ================= */
+              const res = await fetch(INFER_URL, {
+                method: "POST",
+                body: form,
+              });
 
-navigator.mediaDevices.getUserMedia({
-video:{facingMode:"environment"}
-})
-.then(stream=>{
-video.srcObject=stream;
-video.onloadedmetadata=()=>video.play();
-statusRef.current.innerText="Camera ready";
-});
+              const data = await res.json();
 
-/* ================= MAIN LOOP ================= */
+              let dets = (data.detections || []).filter(
+                (d) => d.confidence > 0.6,
+              );
 
-let busy=false;
-let lastInfer=0;
+              /* SORT LEFT → RIGHT */
 
-async function loop(){
+              dets.sort(
+                (a, b) => a.bbox[0] + a.bbox[2] - (b.bbox[0] + b.bbox[2]),
+              );
 
-if(!video.videoWidth){
-requestAnimationFrame(loop);
-return;
-}
+              dets = dets.slice(0, 2);
 
-/* resize */
+              drawBoxes(dets);
 
-canvas.width=video.videoWidth;
-canvas.height=video.videoHeight;
+              /* FIXED TRACK ASSIGNMENT */
 
-renderer.setSize(
-video.videoWidth,
-video.videoHeight,
-false
-);
+              if (dets.length === 1) {
+                updateTrack(dets[0], 0);
+              }
 
-camera.aspect=
-video.videoWidth/video.videoHeight;
+              if (dets.length === 2) {
+                updateTrack(dets[0], 0); // left foot
+                updateTrack(dets[1], 1); // right foot
+              }
+            } catch {}
 
-camera.updateProjectionMatrix();
+            busy = false;
+          },
+          "image/jpeg",
+          0.6,
+        );
+      }
 
-/* draw camera */
+      /* APPLY SHOES */
 
-ctx.drawImage(video,0,0);
+      applyShoe(0);
+      applyShoe(1);
 
-const now=performance.now();
+      renderer.render(scene, camera);
 
-/* YOLO inference */
+      requestAnimationFrame(loop);
+    }
 
-if(!busy && now-lastInfer>350){
+    loop();
+  }, []);
 
-busy=true;
-lastInfer=now;
+  /* ================= UI ================= */
 
-canvas.toBlob(async(blob)=>{
+ return (
+  <div className="w-full h-full relative">
+    {/* Camera Feed */}
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      muted
+      className="w-full h-full object-cover"
+    />
 
-try{
+    {/* 3D Overlay */}
+    <canvas
+      ref={threeCanvasRef}
+      className="absolute top-0 left-0 w-full h-full pointer-events-none"
+    />
 
-const form=new FormData();
-form.append("file",blob);
-
-const res=await fetch(
-INFER_URL,
-{method:"POST",body:form}
-);
-
-const data=await res.json();
-
-let dets=(data.detections||[])
-.filter(d=>d.confidence>0.6);
-
-/* SORT LEFT → RIGHT */
-
-dets.sort(
-(a,b)=>
-(a.bbox[0]+a.bbox[2])-
-(b.bbox[0]+b.bbox[2])
-);
-
-dets=dets.slice(0,2);
-
-drawBoxes(dets);
-
-/* FIXED TRACK ASSIGNMENT */
-
-if(dets.length===1){
-
-updateTrack(dets[0],0);
-
-}
-
-if(dets.length===2){
-
-updateTrack(dets[0],0); // left foot
-updateTrack(dets[1],1); // right foot
-
-}
-
-}catch{}
-
-busy=false;
-
-},"image/jpeg",0.6);
-}
-
-/* APPLY SHOES */
-
-applyShoe(0);
-applyShoe(1);
-
-renderer.render(scene,camera);
-
-requestAnimationFrame(loop);
-}
-
-loop();
-
-},[]);
-
-/* ================= UI ================= */
-
-return(
-<div style={{
-background:"#000",
-color:"#fff",
-textAlign:"center",
-minHeight:"100vh"
-}}>
-
-<h2>AR Foot Try-On PRO max</h2>
-<p ref={statusRef}>Initializing…</p>
-
-<div style={{
-position:"relative",
-maxWidth:"500px",
-margin:"auto"
-}}>
-
-<video
-ref={videoRef}
-muted
-playsInline
-style={{width:"100%"}}
-/>
-
-<canvas
-ref={threeCanvasRef}
-style={{
-position:"absolute",
-top:0,
-left:0,
-width:"100%",
-height:"100%",
-pointerEvents:"none"
-}}
-/>
-
-<canvas
-ref={canvasRef}
-style={{display:"none"}}
-/>
-
-</div>
-</div>
+    {/* Hidden Canvas */}
+    <canvas ref={canvasRef} className="hidden" />
+  </div>
 );
 }

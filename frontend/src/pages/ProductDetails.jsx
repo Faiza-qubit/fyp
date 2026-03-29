@@ -10,9 +10,7 @@ import { addCartItem } from "@/lib/cart";
 export default function ProductDetails() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
-
-const { id } = useParams();
-const shoe = SHOES.find((s) => s._id === id);
+  const shoe = SHOES.find((s) => String(s.id) === String(id));
 
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -187,14 +185,26 @@ const shoe = SHOES.find((s) => s._id === id);
               </div>
             </div>
 
-            {/* ⭐ BUTTON */}
-            <Button
-              onClick={handleAddToCart}
-              className="h-14 bg-yellow-500 text-black font-bold rounded-xl"
-            >
-              <ShoppingCart className="w-5 h-5 mr-2" />
-              Add to Cart
-            </Button>
+            {/* ⭐ BUTTONS */}
+            <div className="flex gap-4">
+              {/* Add to Cart */}
+              <Button
+                onClick={handleAddToCart}
+                className="flex-1 h-14 bg-yellow-500 text-black font-bold rounded-xl"
+              >
+                <ShoppingCart className="w-5 h-5 mr-2" />
+                Add to Cart
+              </Button>
+
+              {/* Virtual Try-On */}
+              <Button
+                onClick={() => setLocation(`/virtual-try-on/${shoe.id}`)}
+                className="flex-1 h-14 bg-black border border-yellow-500 text-yellow-400 font-bold rounded-xl hover:bg-yellow-500 hover:text-black"
+              >
+                <Sparkles className="w-5 h-5 mr-2" />
+                Try-On
+              </Button>
+            </div>
           </motion.div>
         </div>
 
