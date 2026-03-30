@@ -3,16 +3,28 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, CreditCard, Lock, ShoppingBag, Loader } from "lucide-react";
+import {
+  ChevronLeft,
+  CreditCard,
+  Lock,
+  ShoppingBag,
+  Loader,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { loadStripe } from "@stripe/stripe-js";
-import { CardElement, Elements, useStripe, useElements } from "@stripe/react-stripe-js";
+import {
+  CardElement,
+  Elements,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 import axios from "axios";
 import { clearCart, getCartItems } from "@/lib/cart";
 
 const API_BASE_URL = "http://localhost:5000/api";
-const STRIPE_PUBLISHABLE_KEY = "pk_test_51Sc8iyHLnZ9m3Jv2RutezcRpbj7DMNFWIdH3zbVg7kSFPWeU86z7ZH8q1lCCYSWd4EDq4kKAps4jcdH51TPtY3rV00bgBglRz4"; // Replace with your actual key
+const STRIPE_PUBLISHABLE_KEY =
+  "pk_test_51Sc8iyHLnZ9m3Jv2RutezcRpbj7DMNFWIdH3zbVg7kSFPWeU86z7ZH8q1lCCYSWd4EDq4kKAps4jcdH51TPtY3rV00bgBglRz4"; // Replace with your actual key
 
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
@@ -49,7 +61,10 @@ function PaymentForm() {
     const items = getCartItems();
     setCartItems(items);
 
-    const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0), 0);
+    const subtotal = items.reduce(
+      (sum, item) => sum + Number(item.price || 0) * (item.quantity || 1),
+      0,
+    );
     setFormData((prev) => ({
       ...prev,
       amount: subtotal,
@@ -67,10 +82,16 @@ function PaymentForm() {
   };
 
   const handleSubmit = async (e) => {
-    const firstItem = cartItems[0];
-    const shoeId = firstItem?.shoeId;
-    const shoeColor = firstItem?.colorName;
     e.preventDefault();
+    const itemsPayload = cartItems
+      .filter((item) => item.shoeId)
+      .map((item) => ({
+        shoeId: String(item.shoeId),
+        size: item.size || "",
+        color: item.colorName || "",
+        quantity: item.quantity || 1,
+        price: item.price || 0,
+      }));
 
     if (!stripe || !elements) {
       toast({
@@ -159,9 +180,7 @@ function PaymentForm() {
             city: formData.city,
             zipCode: formData.zipCode,
             country: formData.country,
-            shoeId: firstItem?.shoeId,
-            shoeSize: firstItem?.size,
-            shoeColor: firstItem?.colorName,
+            items: itemsPayload,
             amount: totalAmount,
           });
           clearCart();
@@ -230,9 +249,15 @@ function PaymentForm() {
           >
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-sm uppercase tracking-wide text-emerald-300">Success</p>
-                <h3 className="text-2xl font-semibold text-white">{successMessage.title}</h3>
-                <p className="text-gray-200 mt-1">{successMessage.description}</p>
+                <p className="text-sm uppercase tracking-wide text-emerald-300">
+                  Success
+                </p>
+                <h3 className="text-2xl font-semibold text-white">
+                  {successMessage.title}
+                </h3>
+                <p className="text-gray-200 mt-1">
+                  {successMessage.description}
+                </p>
               </div>
               <div className="flex gap-3 pt-3 md:pt-0">
                 <Button
@@ -290,7 +315,10 @@ function PaymentForm() {
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="md:col-span-2">
-                    <Label htmlFor="fullName" className="text-gray-300 mb-2 block">
+                    <Label
+                      htmlFor="fullName"
+                      className="text-gray-300 mb-2 block"
+                    >
                       Full Name *
                     </Label>
                     <Input
@@ -338,7 +366,10 @@ function PaymentForm() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <Label htmlFor="address" className="text-gray-300 mb-2 block">
+                    <Label
+                      htmlFor="address"
+                      className="text-gray-300 mb-2 block"
+                    >
                       Address
                     </Label>
                     <Input
@@ -366,7 +397,10 @@ function PaymentForm() {
                   </div>
 
                   <div>
-                    <Label htmlFor="zipCode" className="text-gray-300 mb-2 block">
+                    <Label
+                      htmlFor="zipCode"
+                      className="text-gray-300 mb-2 block"
+                    >
                       ZIP Code
                     </Label>
                     <Input
@@ -380,7 +414,10 @@ function PaymentForm() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <Label htmlFor="country" className="text-gray-300 mb-2 block">
+                    <Label
+                      htmlFor="country"
+                      className="text-gray-300 mb-2 block"
+                    >
                       Country
                     </Label>
                     <Input
@@ -414,7 +451,9 @@ function PaymentForm() {
                 {/* Security Badge */}
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                   <Lock className="w-4 h-4 text-green-500" />
-                  <span>Your payment information is encrypted and secure with Stripe</span>
+                  <span>
+                    Your payment information is encrypted and secure with Stripe
+                  </span>
                 </div>
               </div>
 
@@ -447,7 +486,7 @@ function PaymentForm() {
               <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
 
               {/* Item */}
-              <div className="space-y-4 mb-6">
+              <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-yellow-500/40">
                 {cartItems.length === 0 ? (
                   <div className="flex gap-4">
                     <div className="w-20 h-20 bg-neutral-800 rounded-lg flex items-center justify-center">
@@ -455,12 +494,14 @@ function PaymentForm() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-sm">No items in cart</h3>
-                      <p className="text-gray-400 text-sm">Please add shoes before paying.</p>
+                      <p className="text-gray-400 text-sm">
+                        Please add shoes before paying.
+                      </p>
                     </div>
                   </div>
                 ) : (
                   cartItems.map((item) => (
-                    <div className="flex gap-4" key={item.id}>
+                    <div className="flex gap-4" key={item.cartItemId}>
                       <img
                         src={item.image}
                         alt={item.name}
@@ -468,8 +509,21 @@ function PaymentForm() {
                       />
                       <div className="flex-1">
                         <h3 className="font-bold text-sm">{item.name}</h3>
-                        <p className="text-gray-400 text-sm">Size: US {item.size}</p>
-                        <p className="text-yellow-500 font-bold mt-1">${Number(item.price || 0).toFixed(2)}</p>
+
+                        <p className="text-gray-400 text-sm">
+                          Size: US {item.size}
+                        </p>
+
+                        <p className="text-gray-400 text-sm">
+                          Qty: {item.quantity || 1}
+                        </p>
+
+                        <p className="text-yellow-500 font-bold mt-1">
+                          $
+                          {(
+                            Number(item.price || 0) * (item.quantity || 1)
+                          ).toFixed(2)}
+                        </p>
                       </div>
                     </div>
                   ))

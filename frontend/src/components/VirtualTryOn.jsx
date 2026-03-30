@@ -30,6 +30,15 @@ const scanLines = Array.from({ length: 8 }, (_, i) => i);
 
 export default function VirtualTryOn() {
   const [, navigate] = useLocation();
+  const handleProtectedNavigation = (path) => {
+  const token = sessionStorage.getItem("accessToken");
+
+  if (token) {
+    navigate(path);
+  } else {
+    navigate(`/login?redirect=${path.replace("/", "")}`);
+  }
+};
   return (
     <section id="try-on" className="relative py-24 overflow-hidden bg-gradient-to-b from-background via-card/30 to-background">
       <div className="absolute inset-0 overflow-hidden">

@@ -3,12 +3,20 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ShoppingBag, Trash2, ArrowRight } from "lucide-react";
-import { getCartItems, removeCartItem } from "@/lib/cart";
+
+import {
+  getCartItems,
+  removeCartItem,
+  increaseQuantity,
+  decreaseQuantity,
+} from "@/lib/cart";
 
 export default function Cart() {
   const [, setLocation] = useLocation();
-  const isLoggedIn = !!localStorage.getItem("token");
   const [items, setItems] = useState([]);
+
+  // ✅ FIX: define login state properly
+  const isLoggedIn = !!sessionStorage.getItem("accessToken");
 
   const loadItems = () => {
     setItems(getCartItems());
@@ -16,16 +24,25 @@ export default function Cart() {
 
   useEffect(() => {
     loadItems();
+
     const onCartUpdate = () => loadItems();
     window.addEventListener("cart-updated", onCartUpdate);
-    return () => window.removeEventListener("cart-updated", onCartUpdate);
+
+    return () =>
+      window.removeEventListener("cart-updated", onCartUpdate);
   }, []);
 
   const total = useMemo(
-    () => items.reduce((sum, item) => sum + Number(item.price || 0), 0),
+    () =>
+      items.reduce(
+        (sum, item) =>
+          sum + Number(item.price || 0) * (item.quantity || 1),
+        0
+      ),
     [items]
   );
 
+  // ✅ LOGIN CHECK UI
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-neutral-950 text-white pt-20 px-6 flex items-center justify-center">
@@ -35,7 +52,7 @@ export default function Cart() {
             Please login or sign up to view your cart items.
           </p>
           <Button
-            onClick={() => setLocation("/login")}
+           onClick={() => setLocation("/login?redirect=cart")}
             className="bg-yellow-500 text-black hover:bg-yellow-400"
           >
             Go to Login / Signup
@@ -46,7 +63,7 @@ export default function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white pt-24 px-6">
+    <div className="min-h-screen bg-neutral-950 text-white pt-24 px-6 pb-32">
       <div className="max-w-5xl mx-auto">
         <h1 className="text-4xl font-bold mb-8">Your Cart</h1>
 
@@ -61,42 +78,83 @@ export default function Cart() {
             </Link>
           </Card>
         ) : (
-          <div className="space-y-4">
-
+          <div className="space-y-5">
             {items.map((item) => (
               <Card
                 key={item.cartItemId}
-                className="p-4 bg-neutral-900 border border-white/10 flex items-center gap-4"
+                className="p-5 bg-neutral-900 border border-white/10 flex items-center justify-between rounded-xl hover:border-yellow-500/30 transition-all"
               >
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-20 h-20 object-cover rounded-md"
-                />
+                {/* LEFT SIDE */}
+                <div className="flex items-center gap-5 flex-1">
+                  {/* IMAGE */}
+                  {item.image && (
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-24 h-24 object-cover rounded-lg bg-black"
+                    />
+                  )}
 
-                <div className="flex-1">
-                  <p className="font-semibold">{item.name}</p>
-                  <p className="text-sm text-gray-400">Size: US {item.size}</p>
-                  <p className="text-sm text-gray-400">Color: {item.colorName}</p>
+                  {/* INFO */}
+                  <div className="flex flex-col gap-1">
+                    <p className="text-lg font-semibold">{item.name}</p>
 
-                  {/* DEBUG */}
-                  <p className="text-xs text-gray-500">ID: {item.shoeId}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">
+                      {item.brand}
+                    </p>
+
+                    <div className="flex gap-4 text-sm text-gray-400">
+                      <span>Size: US {item.size}</span>
+                    </div>
+                  </div>
                 </div>
 
-                <p className="font-bold text-yellow-500">${item.price}</p>
+                {/* RIGHT SIDE */}
+                <div className="flex items-center gap-8">
+                  {/* QUANTITY */}
+                  <div className="flex items-center bg-black/40 border border-white/10 rounded-lg px-2 py-1 gap-2">
+                    <button
+                      onClick={() => decreaseQuantity(item.cartItemId)}
+                      className="px-2 text-gray-300 hover:text-yellow-500"
+                    >
+                      −
+                    </button>
 
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeCartItem(item.cartItemId)}
-                  className="text-gray-300 hover:text-red-400"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                    <span className="w-6 text-center">
+                      {item.quantity || 1}
+                    </span>
+
+                    <button
+                      onClick={() => increaseQuantity(item.cartItemId)}
+                      className="px-2 text-gray-300 hover:text-yellow-500"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* PRICE */}
+                  <p className="text-lg font-bold text-yellow-500 min-w-[80px] text-right">
+                    $
+                    {(
+                      Number(item.price || 0) *
+                      (item.quantity || 1)
+                    ).toFixed(2)}
+                  </p>
+
+                  {/* DELETE */}
+                  <button
+                    onClick={() =>
+                      removeCartItem(item.cartItemId)
+                    }
+                    className="text-gray-400 hover:text-red-500"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
               </Card>
             ))}
 
-            {/* ⭐ ORDER SUMMARY + CHECKOUT BUTTON */}
+            {/* ORDER SUMMARY */}
             <Card className="p-6 bg-neutral-900 border border-white/10 mt-6">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-lg">Total</p>
@@ -113,7 +171,6 @@ export default function Cart() {
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Card>
-
           </div>
         )}
       </div>

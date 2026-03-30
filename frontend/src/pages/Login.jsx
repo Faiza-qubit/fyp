@@ -38,12 +38,12 @@ export default function Login({ setIsLoggedIn }) {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("accessToken");
 
     if (token) {
-      setLocation("/shop"); // already logged in → go shop
+      setIsLoggedIn?.(true); // sync global state
     }
-  }, []);
+  }, [setIsLoggedIn, setLocation]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,16 +69,19 @@ export default function Login({ setIsLoggedIn }) {
       }
 
       // ✅ STORE BOTH TOKENS
-      localStorage.setItem("token", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
-      localStorage.setItem("user", JSON.stringify(user));
-      window.dispatchEvent(new Event("auth-changed"));
+      sessionStorage.setItem("accessToken", accessToken);
+      sessionStorage.setItem("refreshToken", refreshToken);
+      sessionStorage.setItem("user", JSON.stringify(user));
 
       // UPDATE LOGIN STATE
       if (setIsLoggedIn) setIsLoggedIn(true);
 
       // REDIRECT TO SHOP
-      setLocation("/shop");
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect");
+
+      setLocation(redirect ? `/${redirect}` : "/shop");
+      window.dispatchEvent(new Event("auth-changed"));
     } catch (err) {
       console.error("Auth error:", err);
       setError(getApiErrorMessage(err, "Login failed. Please try again."));

@@ -1,29 +1,38 @@
-import nodemailer from "nodemailer";
 import Subscription from "../models/Subscription.js";
 
-function buildTransport() {
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  const host = process.env.SMTP_HOST;
-  const port = Number(process.env.SMTP_PORT || 587);
+export const checkSubscription = async (req, res) => {
+  try {
+    const { email } = req.query;
 
-  if (!user || !pass || !host) {
-    return null;
+    if (!email) {
+      return res.status(400).json({ message: "Email required" });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const exists = await Subscription.findOne({ email: normalizedEmail });
+
+    return res.json({
+      alreadySubscribed: !!exists,
+      message: exists ? "Already subscribed" : "Not subscribed",
+    });
+  } catch (err) {
+    console.error("Check subscription error:", err);
+    res.status(500).json({ message: "Error checking subscription" });
   }
+};
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-  });
-}
 
+// ✅ SUBSCRIBE USER
 export const subscribe = async (req, res) => {
   try {
     const { email } = req.body;
+
     if (!email) {
-      return res.status(400).json({ success: false, message: "Email is required" });
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -31,46 +40,25 @@ export const subscribe = async (req, res) => {
     const upsertResult = await Subscription.updateOne(
       { email: normalizedEmail },
       { $setOnInsert: { email: normalizedEmail } },
-      { upsert: true },
+      { upsert: true }
     );
 
     const alreadySubscribed = upsertResult.upsertedCount === 0;
-    if (alreadySubscribed) {
-      return res.status(200).json({
-        success: true,
-        alreadySubscribed: true,
-        message: "This email is already subscribed.",
-      });
-    }
 
-    const transporter = buildTransport();
-    let emailSent = false;
-    let message = "Subscription successful.";
-
-    if (transporter) {
-      try {
-        await transporter.sendMail({
-          from: process.env.SMTP_FROM || process.env.SMTP_USER,
-          to: normalizedEmail,
-          subject: "Welcome to SizeWise updates",
-          text: "Thanks for subscribing to SizeWise. You will now receive updates and exclusive offers.",
-        });
-        emailSent = true;
-        message = "Subscription successful. Please check your email.";
-      } catch (mailError) {
-        console.error("Subscription email send error:", mailError.message);
-        message = "Subscription successful, but we could not send the email confirmation.";
-      }
-    }
-
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
-      alreadySubscribed: false,
-      emailSent,
-      message,
+      alreadySubscribed,
+      message: alreadySubscribed
+        ? "This email is already subscribed."
+        : "Subscription successful.",
     });
+
   } catch (err) {
     console.error("Subscription error:", err);
-    return res.status(500).json({ success: false, message: "Subscription failed", error: err.message });
+
+    return res.status(500).json({
+      success: false,
+      message: "Subscription failed",
+    });
   }
 };

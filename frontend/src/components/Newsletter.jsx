@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Send, Sparkles, Check, Zap, Gift } from "lucide-react";
@@ -18,32 +19,65 @@ export default function Newsletter() {
   const [isLoading, setIsLoading] = useState(false);
   const [serverMessage, setServerMessage] = useState("");
 
+  useEffect(() => {
+    const checkSubscription = async () => {
+      try {
+        const user = JSON.parse(sessionStorage.getItem("user"));
+        if (!user?.email) return;
+
+        const res = await axios.get(
+          `http://192.168.1.7:5000/api/subscriptions/check?email=${user.email}`,
+        );
+
+        if (res.data?.alreadySubscribed) {
+          setIsAlreadySubscribed(true);
+          setServerMessage(res.data.message || "Already subscribed");
+        }
+      } catch (err) {
+        console.log("Subscription check failed");
+      }
+    };
+
+    checkSubscription();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email) return;
 
     setIsLoading(true);
     setServerMessage("");
-    setIsAlreadySubscribed(false);
 
     try {
-      const response = await axios.post("http://localhost:5000/api/subscriptions", {
-        email,
-      });
+      const res = await axios.post(
+        "http://192.168.1.7:5000/api/subscriptions",
+        { email },
+      );
 
-      if (response.data?.alreadySubscribed) {
-        setIsAlreadySubscribed(true);
-        setIsSubmitted(false);
-        setServerMessage(response.data.message || "This email is already subscribed.");
-      } else {
-        setServerMessage(response.data.message || "Subscription successful");
-        setIsSubmitted(true);
+      const { alreadySubscribed, message } = res.data;
+
+      setIsAlreadySubscribed(alreadySubscribed);
+      setIsSubmitted(!alreadySubscribed);
+      setServerMessage(
+        message ||
+          (alreadySubscribed
+            ? "Already subscribed"
+            : "Subscribed successfully"),
+      );
+
+      if (!alreadySubscribed) {
         setEmail("");
       }
-    } catch (error) {
+    } catch (err) {
+      const alreadySubscribed = err.response?.data?.alreadySubscribed;
+
+      setIsAlreadySubscribed(!!alreadySubscribed);
       setIsSubmitted(false);
-      setIsAlreadySubscribed(false);
-      setServerMessage(error.response?.data?.message || "Unable to subscribe right now");
+
+      setServerMessage(
+        err.response?.data?.message ||
+          (alreadySubscribed ? "Already subscribed" : "Server error"),
+      );
     } finally {
       setIsLoading(false);
     }
@@ -101,8 +135,8 @@ export default function Newsletter() {
           </h2>
 
           <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
-            Subscribe to get early access to limited editions, exclusive discounts,
-            and be the first to know about our latest collections.
+            Subscribe to get early access to limited editions, exclusive
+            discounts, and be the first to know about our latest collections.
           </p>
 
           <motion.div
@@ -176,7 +210,10 @@ export default function Newsletter() {
                   required
                 />
               </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 <Button
                   type="submit"
                   size="lg"
@@ -186,7 +223,11 @@ export default function Newsletter() {
                   {isLoading ? (
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
                       className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full"
                     />
                   ) : (
@@ -205,9 +246,9 @@ export default function Newsletter() {
             </motion.form>
           )}
 
-          {serverMessage && !isSubmitted && (
-            <p className="text-sm text-red-400 mt-4">{serverMessage}</p>
-          )}
+          {serverMessage && !isSubmitted && !isAlreadySubscribed && (
+  <p className="text-sm text-red-400 mt-4">{serverMessage}</p>
+)}
 
           <motion.p
             className="text-sm text-muted-foreground mt-6"
@@ -216,7 +257,8 @@ export default function Newsletter() {
             viewport={{ once: true }}
             transition={{ delay: 0.6 }}
           >
-            Join <span className="text-primary font-semibold">50,000+</span> subscribers. Unsubscribe anytime.
+            Join <span className="text-primary font-semibold">50,000+</span>{" "}
+            subscribers.
           </motion.p>
         </motion.div>
       </div>

@@ -9,11 +9,24 @@ export default function Navigation({ isLoggedIn }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [, setLocation] = useLocation();
+  const handleShopClick = () => {
+    const token = sessionStorage.getItem("accessToken");
+
+    if (isLoggedIn || token) {
+      setLocation("/shop");
+    } else {
+      setLocation("/login");
+    }
+  };
 
   const syncCartCount = () => {
     try {
       const cart = JSON.parse(localStorage.getItem("cart") || "[]");
-      setCartCount(Array.isArray(cart) ? cart.length : 0);
+      const totalCount = Array.isArray(cart)
+        ? cart.reduce((sum, item) => sum + (item.quantity || 1), 0)
+        : 0;
+
+      setCartCount(totalCount);
     } catch {
       setCartCount(0);
     }
@@ -29,50 +42,62 @@ export default function Navigation({ isLoggedIn }) {
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
+
     syncCartCount();
 
     const handleStorage = () => syncCartCount();
     const handleCartUpdate = () => syncCartCount();
+
     window.addEventListener("storage", handleStorage);
     window.addEventListener("cart-updated", handleCartUpdate);
+    window.addEventListener("focus", syncCartCount);
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("cart-updated", handleCartUpdate);
+      window.removeEventListener("focus", syncCartCount);
     };
   }, []);
 
   const handleProfileClick = () => {
-    const hasToken = !!localStorage.getItem("token");
-    setLocation(isLoggedIn || hasToken ? "/profile" : "/login");
-  };
+    const token = sessionStorage.getItem("accessToken");
 
+    if (token) {
+      setLocation("/profile");
+    } else {
+      setLocation("/login?redirect=profile");
+    }
+  };
   const handleQuickAddClick = () => {
-    const hasToken = !!localStorage.getItem("token");
-    setLocation(isLoggedIn || hasToken ? "/shop" : "/login");
+    const token = sessionStorage.getItem("accessToken");
+
+    if (token) {
+      setLocation("/shop");
+    } else {
+      setLocation("/login?redirect=shop");
+    }
   };
-
   const handleTryVirtualFitClick = () => {
-  const section = document.getElementById("try-on");
+    const section = document.getElementById("try-on");
 
-  if (section) {
-    section.scrollIntoView({ behavior: "smooth" });
-  } else {
-    // fallback if user is on another page
-    setLocation("/");
-    setTimeout(() => {
-      const section = document.getElementById("try-on");
-      if (section) {
-        section.scrollIntoView({ behavior: "smooth" });
-      }
-    }, 300);
-  }
-};
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    } else {
+      // fallback if user is on another page
+      setLocation("/");
+      setTimeout(() => {
+        const section = document.getElementById("try-on");
+        if (section) {
+          section.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 300);
+    }
+  };
 
   const handleCartClick = () => {
-    const hasToken = !!localStorage.getItem("token");
-    setLocation(isLoggedIn || hasToken ? "/cart" : "/login");
+    const hasToken = !!sessionStorage.getItem("accessToken");
+    setLocation("/cart");
   };
 
   const navLinks = [
@@ -150,13 +175,13 @@ export default function Navigation({ isLoggedIn }) {
             ))}
 
             {/* ---- NEW SHOP LINK ---- */}
-            <Link
-              href="/shop"
+            <button
+              onClick={handleShopClick}
               className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors relative group"
             >
               Shop
               <span className="absolute -bottom-1 left-0 h-0.5 w-0 group-hover:w-full bg-gradient-to-r from-primary to-yellow-400 rounded-full transition-all duration-300"></span>
-            </Link>
+            </button>
           </div>
 
           {/* ---- RIGHT CONTROLS ---- */}
@@ -253,14 +278,15 @@ export default function Navigation({ isLoggedIn }) {
               ))}
 
               {/* ---- MOBILE SHOP LINK ---- */}
-              <Link
-                href="/shop"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleShopClick();
+                }}
                 className="block text-lg font-medium text-foreground hover:text-primary transition-colors"
               >
                 Shop
-              </Link>
-
+              </button>
               <div className="space-y-3 mt-4">
                 <Button
                   variant="outline"

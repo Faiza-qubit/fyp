@@ -1,6 +1,5 @@
 import Payment from "../models/Payment.js";
 import Sale from "../models/Sale.js";
-import Shoe from "../models/Shoe.js";
 import Stripe from "stripe";
 
 // Helper function to get Stripe instance
@@ -23,15 +22,7 @@ export const createPaymentIntent = async (req, res) => {
   try {
     const stripe = getStripe();
 
-    const {
-      amount,
-      email,
-      fullName,
-      shoeId,
-      shoeSize,
-      shoeColor,
-    } = req.body;
-
+    const { amount, email, fullName } = req.body;
     // Validate amount
     if (!amount || amount < 1) {
       return res.status(400).json({ message: "Invalid amount" });
@@ -44,9 +35,6 @@ export const createPaymentIntent = async (req, res) => {
       metadata: {
         email,
         fullName,
-        shoeId,
-        shoeSize,
-        shoeColor,
       },
     });
 
@@ -79,9 +67,7 @@ export const confirmPayment = async (req, res) => {
       city,
       zipCode,
       country,
-      shoeId,
-      shoeSize,
-      shoeColor,
+      items,
       amount,
     } = req.body;
 
@@ -117,21 +103,7 @@ export const confirmPayment = async (req, res) => {
         message: `Payment status is '${paymentIntent.status}', not 'succeeded'`,
       });
     }
-    
-    if (shoeId) {
 
-  const shoe = await Shoe.findById(shoeId);
-
-  if (!shoe)
-    return res.status(404).json({ message: "Shoe not found" });
-
-  if (shoe.stock <= 0)
-    return res.status(400).json({
-      success:false,
-      message: "❌ This product is OUT OF STOCK"
-    });
-
-}
     // Create payment record in database
     const payment = new Payment({
       fullName,
@@ -142,45 +114,38 @@ export const confirmPayment = async (req, res) => {
       zipCode: zipCode || "",
       country: country || "",
       cardName: fullName,
-      cardNumber: "****-****-****-****", // Stripe handles this securely
+      cardNumber: "****-****-****-****",
       expiryDate: "****",
       cvv: "***",
-      shoeId: shoeId || null,
-      shoeSize: shoeSize || "",
-      shoeColor: shoeColor || "",
+      items: (items || [])
+        .filter(item => item && item.shoeId)
+        .map(item => ({
+          shoeId: item.shoeId,
+          quantity: item.quantity || 1,
+          price: item.price, 
+          size: item.size,
+        })),
       amount,
       stripePaymentIntentId: paymentIntentId,
       status: "completed",
     });
 
     const savedPayment = await payment.save();
+    if (items && items.length > 0) {
+      await Sale.create({
+        orderId: savedPayment._id,
+        items: items.map(item => ({
+          shoeId: item.shoeId,
+          quantity: item.quantity || 1,
+          price: item.price / item.quantity,
+        })),
+        totalAmount: amount,
+      });
+    }
 
     // ===== STOCK REDUCTION + SALE RECORD =====
 
-    if (shoeId) {
 
-      const shoe = await Shoe.findById(shoeId);
-
-      if (!shoe) {
-        return res.status(404).json({ message: "Shoe not found" });
-      }
-
-      // reduce stock
-      if (shoe.stock <= 0) {
-        return res.status(400).json({ message: "Out of stock" });
-      }
-
-      shoe.stock = shoe.stock - 1;
-      await shoe.save();
-
-      // create sale entry
-      await Sale.create({
-        shoeId: shoeId,
-        quantity: 1,
-        totalPrice: amount
-      });
-
-    }
     console.log("Payment saved successfully:", savedPayment._id);
 
     res.status(201).json({

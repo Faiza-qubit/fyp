@@ -69,7 +69,7 @@ function Router({ isLoggedIn, setIsLoggedIn }) {
         component={ProductDetails}
         isLoggedIn={isLoggedIn}
       />
-      <ProtectedRoute path="/cart" component={Cart} isLoggedIn={isLoggedIn} />
+      <Route path="/cart" component={Cart} />
       <ProtectedRoute
         path="/profile"
         component={Profile}
@@ -93,19 +93,23 @@ function Router({ isLoggedIn, setIsLoggedIn }) {
 }
 function App() {
   // ✅ Track login state dynamically
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
-
-  // Optional: listen to changes in localStorage (multi-tab support)
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    !!sessionStorage.getItem("accessToken"),
+  );
   useEffect(() => {
-    const handleStorage = () => setIsLoggedIn(!!localStorage.getItem("token"));
-    const handleAuthChanged = () =>
-      setIsLoggedIn(!!localStorage.getItem("token"));
-    window.addEventListener("storage", handleStorage);
-    window.addEventListener("auth-changed", handleAuthChanged);
+    const checkAuth = () => {
+      const token = sessionStorage.getItem("accessToken");
+      setIsLoggedIn(!!token);
+    };
+
+    // run once
+    checkAuth();
+
+    // listen for login/logout changes
+    window.addEventListener("auth-changed", checkAuth);
 
     return () => {
-      window.removeEventListener("storage", handleStorage);
-      window.removeEventListener("auth-changed", handleAuthChanged);
+      window.removeEventListener("auth-changed", checkAuth);
     };
   }, []);
 

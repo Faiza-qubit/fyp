@@ -50,18 +50,13 @@ export default function ProductDetails() {
   };
 
   const handleAddToCart = () => {
-    if (!localStorage.getItem("token")) {
-      setLocation("/login");
-      return;
-    }
-
     addCartItem({
-      shoeId: shoe._id,
+      shoeId: shoe._id || shoe.id,
       name: shoe.name,
       brand: shoe.brand,
       price: shoe.price,
       size: selectedSize || shoe.sizes?.[0],
-      color: selectedColor[0],
+      colors: selectedColor,
       colorName: "Default",
       image: selectedImage,
     });

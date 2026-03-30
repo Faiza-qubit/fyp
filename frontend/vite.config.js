@@ -5,8 +5,8 @@ import path from "path";
 
 export default defineConfig({
   plugins: [
-    react(),
-    basicSsl(),   // Local HTTPS certificate generator
+    react(),           // Keep this as default (fast esbuild + SWC)
+    basicSsl(),        // Keep for HTTPS
   ],
 
   resolve: {
@@ -16,13 +16,13 @@ export default defineConfig({
   },
 
   server: {
-    host: "0.0.0.0",   // for local network testing (e.g. on mobile devices)
+    host: "0.0.0.0",
     port: 5173,
-    https: true,
+    https: true,       // basicSsl() will handle this
   },
 
   preview: {
-    host: "0.0.0.0",   // for production preview testing
+    host: "0.0.0.0",
     port: 4173,
     https: true,
   },

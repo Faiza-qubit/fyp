@@ -1,9 +1,23 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "wouter";
+import { useLocation } from "wouter"; // ✅ NEW
 import ShoeCard from "../components/ui/ShoeCard";
 import { SHOES } from "../lib/mockData";
 
 export default function FeaturedProducts() {
+
+  // ⭐ navigation hook
+  const [, navigate] = useLocation();
+
+  // ⭐ reusable login check
+  const handleProtectedNavigation = (path) => {
+    const token = sessionStorage.getItem("accessToken");
+
+    if (token) {
+      navigate(path);
+    } else {
+      navigate(`/login?redirect=${path.replace("/", "")}`);
+    }
+  };
 
   // ⭐ take first 6 products
   const featuredShoes = SHOES.slice(0, 6);
@@ -18,12 +32,13 @@ export default function FeaturedProducts() {
             Featured Collections
           </h2>
 
-          <Link
-            href="/shop"
+          {/* ✅ FIXED BUTTON */}
+          <button
+            onClick={() => handleProtectedNavigation("/shop")}
             className="text-yellow-500 font-semibold hover:text-yellow-400 transition"
           >
             See All →
-          </Link>
+          </button>
         </div>
 
         {/* ⭐ Description */}
@@ -40,10 +55,8 @@ export default function FeaturedProducts() {
 
         {/* ⭐ Grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-
           <AnimatePresence>
             {featuredShoes.map((shoe, index) => (
-
               <motion.div
                 key={shoe.id}
                 layout
@@ -56,19 +69,17 @@ export default function FeaturedProducts() {
                   delay: index * 0.08
                 }}
               >
-                {/* ⭐ VERY IMPORTANT → pass main image */}
                 <ShoeCard
                   shoe={{
                     ...shoe,
-                    image: shoe.images?.[1]   // ⭐ NEW FIX
+                    image: shoe.images?.[1]
                   }}
                 />
               </motion.div>
-
             ))}
           </AnimatePresence>
-
         </div>
+
       </div>
     </section>
   );

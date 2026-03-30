@@ -418,6 +418,7 @@ export default function Shop() {
                 shoe={{
                   ...shoe,
                   image: shoe.images?.[1],
+                  color: shoe.color,
                 }}
               />
                   </motion.div>

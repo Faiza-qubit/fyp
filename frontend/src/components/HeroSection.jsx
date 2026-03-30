@@ -207,7 +207,15 @@ export default function HeroSection() {
                   size="lg"
                   variant="outline"
                   className="border-primary/50 text-foreground hover:bg-primary/10 rounded-full px-8 gap-2 backdrop-blur-sm"
-                  onClick={() => setLocation("/shop")}
+                  onClick={() => {
+                    const user = localStorage.getItem("user"); // or "token"
+
+                    if (user) {
+                      setLocation("/shop");
+                    } else {
+                      setLocation("/login"); // redirect to login page
+                    }
+                  }}
                 >
                   Shop Collection
                   <motion.span

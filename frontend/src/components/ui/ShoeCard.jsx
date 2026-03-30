@@ -5,9 +5,7 @@ export default function ShoeCard({ shoe }) {
   return (
     <Link href={`/product/${shoe.id}`} className="group block">
       <div className="cursor-pointer bg-black rounded-xl overflow-hidden border border-yellow-600/20 hover:border-yellow-500 transition-all transform hover:-translate-y-1 shadow-lg">
-        
         <div className="relative aspect-square overflow-hidden bg-neutral-900">
-
           {/* AR Badge */}
           {shoe.arEnabled && (
             <div className="absolute top-3 right-3 z-20 bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-md">
@@ -28,7 +26,13 @@ export default function ShoeCard({ shoe }) {
           {/* Hover Quick View */}
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10">
             <div className="flex items-center gap-2 text-yellow-500 font-medium backdrop-blur-sm bg-black/40 px-4 py-2 rounded-full border border-yellow-600/20">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
                 <circle cx="12" cy="12" r="3" />
                 <path d="M2 12s4-8 10-8 10 8 10 8-4 8-10 8-10-8-10-8z" />
               </svg>
@@ -52,10 +56,29 @@ export default function ShoeCard({ shoe }) {
               ${shoe.price}
             </span>
 
-            <div
-              className="w-3 h-3 rounded-full border border-yellow-500/30"
-              style={{ backgroundColor: "#000000" }}
-            />
+            <div className="flex items-center justify-end">
+  {shoe.colors ? (
+    <div className="relative w-4 h-4 rounded-full overflow-hidden border border-yellow-500/30 flex">
+      {shoe.colors.map((c, i) => (
+        <div
+          key={i}
+          className="h-full"
+          style={{
+            backgroundColor: c,
+            width: `${100 / shoe.colors.length}%`,
+          }}
+        />
+      ))}
+    </div>
+  ) : (
+    <div
+      className="w-4 h-4 rounded-full border border-yellow-500/30"
+      style={{
+        backgroundColor: shoe.color || "#000",
+      }}
+    />
+  )}
+</div>
           </div>
         </div>
       </div>

@@ -1,18 +1,18 @@
 import { useEffect, useState, useRef } from "react";
+import { SHOES } from "@/lib/mockData";
 import axios from "axios";
 import { useLocation } from "wouter";
 
 const API_BASE_URL = "http://localhost:5000/api";
 
 export default function Profile() {
-  const token = localStorage.getItem("token");
+  const token =
+    sessionStorage.getItem("accessToken") || localStorage.getItem("token");
   const [, setLocation] = useLocation();
 
   const [user, setUser] = useState(null);
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [previewImage, setPreviewImage] = useState(null);
-  const fileInputRef = useRef(null);
 
   const [footProfile, setFootProfile] = useState({
     footLengthCm: 0,
@@ -23,26 +23,9 @@ export default function Profile() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    sessionStorage.removeItem("accessToken");
     localStorage.removeItem("user");
-    window.dispatchEvent(new Event("auth-changed"));
-    setLocation("/");
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-        // TODO: upload to backend here if needed
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemovePicture = () => {
-    setPreviewImage(null);
-    // TODO: call backend to remove picture if needed
+    setLocation("/login");
   };
 
   useEffect(() => {
@@ -59,10 +42,6 @@ export default function Profile() {
 
         const currentUser = meResponse.data.user;
         setUser(currentUser);
-
-        if (currentUser?.profilePicture) {
-          setPreviewImage(currentUser.profilePicture);
-        }
 
         setFootProfile({
           footLengthCm: currentUser?.footProfile?.footLengthCm || 0,
@@ -104,31 +83,41 @@ export default function Profile() {
   }
 
   const userName = user?.name || "User";
-  const hasPicture = !!previewImage;
-
+  const getShoeName = (shoeId) => {
+    const shoe = SHOES.find((s) => String(s.id) === String(shoeId));
+    return shoe ? shoe.name : `Shoe #${shoeId}`;
+  };
   return (
     <>
       {/* Embedded scrollbar styles */}
       <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.5);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(245, 158, 11, 0.6);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(245, 158, 11, 0.9);
-        }
-        /* For Firefox */
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: rgba(245, 158, 11, 0.6) rgba(0, 0, 0, 0.5);
-        }
+           .custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #facc15, #f59e0b);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #fde047, #fbbf24);
+}
+
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #f59e0b rgba(0, 0, 0, 0.7);
+}
       `}</style>
 
       <div className="min-h-screen bg-gradient-to-br from-black via-zinc-950 to-black text-white pb-12">
@@ -144,70 +133,9 @@ export default function Profile() {
             {/* Profile Card */}
             <div className="lg:col-span-4">
               <div className="bg-black/70 backdrop-blur-xl border border-yellow-600/30 rounded-3xl p-6 md:p-8 shadow-2xl shadow-black/50 transition-all duration-300 hover:shadow-yellow-900/20">
-                {/* Profile Picture + Controls */}
-                <div className="relative mx-auto mb-5 group w-fit">
-                  <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-4 border-yellow-500/50 shadow-xl shadow-yellow-900/40">
-                    {hasPicture ? (
-                      <img
-                        src={previewImage}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-yellow-600 to-amber-700 flex items-center justify-center text-black font-bold text-4xl md:text-5xl">
-                        {userName[0]?.toUpperCase() || "?"}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Edit button */}
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="absolute bottom-0 right-0 bg-black/80 text-white p-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-yellow-600/90 border-2 border-yellow-400/40"
-                    title="Change profile picture"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                  </button>
-
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
+                <div className="w-24 h-24 md:w-28 md:h-28 mx-auto mb-5 rounded-full bg-gradient-to-br from-yellow-600 to-amber-700 flex items-center justify-center text-black font-bold text-4xl md:text-5xl">
+                  {userName[0]?.toUpperCase() || "?"}
                 </div>
-
-                {/* Remove button */}
-                {hasPicture && (
-                  <div className="text-center mb-4">
-                    <button
-                      onClick={handleRemovePicture}
-                      className="text-sm text-red-400 hover:text-red-300 transition-colors underline underline-offset-2"
-                    >
-                      Remove profile picture
-                    </button>
-                  </div>
-                )}
-
                 <div className="text-center mb-6">
                   <h2 className="text-2xl md:text-3xl font-bold">{userName}</h2>
                   <p className="text-gray-400 text-sm md:text-base mt-1">
@@ -261,14 +189,11 @@ export default function Profile() {
               </div>
             </div>
 
-            {/* Order History */}
+            {/* RIGHT ORDERS */}
             <div className="lg:col-span-8">
-              <div className="bg-black/70 backdrop-blur-xl border border-yellow-600/25 rounded-3xl p-6 md:p-8 shadow-2xl shadow-black/50 h-full flex flex-col transition-all duration-300 hover:shadow-yellow-900/15">
-                <h2 className="text-2xl md:text-3xl font-bold mb-6 tracking-tight flex items-center gap-3">
-                  Order History
-                  <span className="text-lg md:text-xl font-medium text-gray-500">
-                    ({orders.length})
-                  </span>
+              <div className="bg-black/70 border border-yellow-600/25 rounded-3xl p-6 shadow-xl h-[97vh] flex flex-col">
+                <h2 className="text-2xl font-bold mb-6">
+                  Order History ({orders.length})
                 </h2>
 
                 {orders.length === 0 ? (
@@ -284,42 +209,77 @@ export default function Profile() {
                     </p>
                   </div>
                 ) : (
-                  <div className="flex-1 overflow-y-auto pr-2 md:pr-4 custom-scrollbar space-y-4 md:space-y-5 max-h-[80vh]">
+                  <div className="space-y-5 overflow-y-auto flex-1 pr-3 custom-scrollbar smooth-scroll">
                     {orders.map((order) => (
                       <div
                         key={order._id}
-                        className="bg-zinc-900/50 border border-zinc-800/80 hover:border-yellow-600/50 rounded-xl md:rounded-2xl p-5 md:p-6 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:shadow-md hover:shadow-yellow-900/10"
+                        className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 
+             transition-all duration-300 
+             hover:border-yellow-500 hover:shadow-lg hover:shadow-yellow-500/10"
                       >
-                        <div className="space-y-1.5">
-                          <p className="font-semibold text-base md:text-lg">
-                            Order #{order._id.slice(-8).toUpperCase()}
-                          </p>
-                          <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs md:text-sm text-gray-400">
-                            <p>
+                        {/* HEADER */}
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <p className="font-semibold text-lg">
+                              Order #{order._id.slice(-8).toUpperCase()}
+                            </p>
+
+                            <p className="text-sm text-gray-400 mt-1">
                               Status:{" "}
-                              <span className="text-yellow-400 font-medium">
+                              <span className="text-yellow-400">
                                 {order.status}
                               </span>
                             </p>
-                            {order.shoeSize && <p>Size: {order.shoeSize}</p>}
-                            {order.shoeColor && <p>Color: {order.shoeColor}</p>}
+                          </div>
+
+                          <div className="text-right">
+                            <p className="text-xs text-gray-400">
+                              Total Price including Tax
+                            </p>
+                            <p className="text-lg font-bold text-yellow-400">
+                              ${Number(order.amount || 0).toFixed(2)}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {new Date(order.createdAt).toLocaleDateString(
+                                "en-US",
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                },
+                              )}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="text-right sm:min-w-[140px] md:min-w-[160px]">
-                          <p className="text-xl md:text-2xl font-bold text-yellow-400">
-                            ${Number(order.amount || 0).toFixed(2)}
-                          </p>
-                          <p className="text-xs md:text-sm text-gray-500 mt-1">
-                            {new Date(order.createdAt).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              },
-                            )}
-                          </p>
+                        {/* ITEMS */}
+                        <div className="grid grid-cols-2 gap-3">
+                          {order.items.map((item, index) => (
+                            <div
+                              key={index}
+                              className="bg-black/40 px-3 py-3 rounded-lg border border-zinc-800"
+                            >
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="text-white font-medium">
+                                    {getShoeName(item.shoeId)}
+                                  </p>
+
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    Size {item.size} • Qty {item.quantity}
+                                  </p>
+                                </div>
+
+                                <p className="text-yellow-400 font-semibold text-sm">
+                                  $
+                                  {(
+                                    Number(item.price || 0) *
+                                    Number(item.quantity || 1)
+                                  ).toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     ))}

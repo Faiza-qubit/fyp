@@ -1,17 +1,26 @@
 import mongoose from "mongoose";
 
 const saleSchema = new mongoose.Schema({
-  shoeId: {
+  orderId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Shoe",
-    required: true
+    ref: "Payment",
+    required: true,
   },
-  quantity: Number,
-  totalPrice: Number,
+
+  items: [
+    {
+      shoeId: { type: String, required: true },
+      quantity: Number,
+      totalPrice: Number,
+    },
+  ],
+
+  totalAmount: Number,
+
   date: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
 export default mongoose.model("Sale", saleSchema);
