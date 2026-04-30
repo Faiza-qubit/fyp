@@ -21,12 +21,22 @@ import {
 } from "@stripe/react-stripe-js";
 import axios from "axios";
 import { clearCart, getCartItems } from "@/lib/cart";
+import { apiUrl } from "@/lib/api";
 
-const API_BASE_URL = "http://localhost:5000/api";
-const STRIPE_PUBLISHABLE_KEY =
-  "pk_test_51Sc8iyHLnZ9m3Jv2RutezcRpbj7DMNFWIdH3zbVg7kSFPWeU86z7ZH8q1lCCYSWd4EDq4kKAps4jcdH51TPtY3rV00bgBglRz4"; // Replace with your actual key
+const STRIPE_PUBLISHABLE_KEY = (
+  import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || ""
+)
+  .trim()
+  .replace(/^['\"]|['\"]$/g, "");
 
-const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
+const isValidStripePublishableKey =
+  /^pk_(test|live)_/.test(STRIPE_PUBLISHABLE_KEY) &&
+  !STRIPE_PUBLISHABLE_KEY.includes("YOUR_") &&
+  !STRIPE_PUBLISHABLE_KEY.endsWith("_KEY");
+
+const stripePromise = isValidStripePublishableKey
+  ? loadStripe(STRIPE_PUBLISHABLE_KEY)
+  : null;
 
 // Separate component for the payment form using Stripe
 function PaymentForm() {
@@ -129,7 +139,7 @@ function PaymentForm() {
       const firstItem = cartItems[0];
 
       const intentResponse = await axios.post(
-        `${API_BASE_URL}/payments/create-intent`,
+        apiUrl("/payments/create-intent"),
         {
           amount: totalAmount,
           email: formData.email,
@@ -171,7 +181,7 @@ function PaymentForm() {
       if (result.paymentIntent && result.paymentIntent.status === "succeeded") {
         // Step 3: Confirm payment in backend
         try {
-          await axios.post(`${API_BASE_URL}/payments/confirm`, {
+          await axios.post(apiUrl("/payments/confirm"), {
             paymentIntentId,
             fullName: formData.fullName,
             email: formData.email,
@@ -577,6 +587,24 @@ function PaymentForm() {
 
 // Main Payment component with Stripe provider
 export default function Payment() {
+  if (!isValidStripePublishableKey) {
+    return (
+      <div className="min-h-screen bg-neutral-950 text-white pt-6">
+        <div className="container mx-auto px-4 md:px-8 py-8 max-w-3xl">
+          <div className="rounded-2xl border border-red-500/40 bg-red-900/20 p-6">
+            <h2 className="text-2xl font-semibold text-red-200 mb-2">
+              Stripe key is not configured correctly
+            </h2>
+            <p className="text-red-100/90 text-sm">
+              Set a valid value for VITE_STRIPE_PUBLISHABLE_KEY in
+              frontend/.env, then restart the frontend dev server.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Elements stripe={stripePromise}>
       <PaymentForm />

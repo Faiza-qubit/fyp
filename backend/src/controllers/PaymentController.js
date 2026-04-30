@@ -4,10 +4,14 @@ import Stripe from "stripe";
 
 // Helper function to get Stripe instance
 function getStripe() {
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  const stripeKey = (process.env.STRIPE_SECRET_KEY || "").trim();
 
   if (!stripeKey) {
     throw new Error("STRIPE_SECRET_KEY is not set in environment variables");
+  }
+
+  if (stripeKey.includes("YOUR_SECRET_KEY")) {
+    throw new Error("STRIPE_SECRET_KEY is a placeholder value. Set your real Stripe secret key in backend/src/.env");
   }
 
   if (!stripeKey.startsWith("sk_test_") && !stripeKey.startsWith("sk_live_")) {

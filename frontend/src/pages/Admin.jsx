@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
+import { apiUrl } from "@/lib/api";
 
 const categories = ["Running", "Casual", "Training", "Sneakers", "BasketBall"];
 const genders = ["Men", "Women", "Unisex"];
@@ -79,9 +80,10 @@ export default function Admin() {
   }, [shoes, searchTerm]);
   // Fetch shoes on mount
   useEffect(() => {
-  axios.get("http://localhost:5000/api/shoes")
-    .then(res => setShoes(res.data))
-    .catch(err => console.error("Error fetching shoes:", err));
+    axios
+      .get(apiUrl("/shoes"))
+      .then((res) => setShoes(res.data))
+      .catch((err) => console.error("Error fetching shoes:", err));
   }, []);
 
 // Handle form submit (create or update)
@@ -99,14 +101,14 @@ const handleSubmit = async (e) => {
   try {
     if (editingShoe && editingShoe._id) {
       // Update existing shoe
-      await axios.put(`http://localhost:5000/api/shoes/${editingShoe._id}`, payload);
+      await axios.put(apiUrl(`/shoes/${editingShoe._id}`), payload);
     } else {
       // Create new shoe
-      await axios.post("http://localhost:5000/api/shoes", payload);
+      await axios.post(apiUrl("/shoes"), payload);
     }
 
     // Refresh the shoe list
-    const res = await axios.get("http://localhost:5000/api/shoes");
+    const res = await axios.get(apiUrl("/shoes"));
     setShoes(res.data);
     setIsAddOpen(false);
     setEditingShoe(null); // reset editing
@@ -141,7 +143,7 @@ const handleDelete = async (id) => {
   if (!id) return console.error("No ID provided for deletion");
 
   try {
-    await axios.delete(`http://localhost:5000/api/shoes/${id}`);
+    await axios.delete(apiUrl(`/shoes/${id}`));
     setShoes(shoes.filter(shoe => shoe._id !== id));
   } catch (err) {
     console.error("Error deleting shoe:", err);

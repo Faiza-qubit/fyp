@@ -5,6 +5,7 @@ import { Input } from "../components/ui/input";
 import { Send, Sparkles, Check, Zap, Gift } from "lucide-react";
 import { motion } from "framer-motion";
 import axios from "axios";
+import { apiUrl } from "@/lib/api";
 
 const benefits = [
   { icon: Gift, text: "Early access to limited editions" },
@@ -26,7 +27,7 @@ export default function Newsletter() {
         if (!user?.email) return;
 
         const res = await axios.get(
-          `http://192.168.1.7:5000/api/subscriptions/check?email=${user.email}`,
+          `${apiUrl("/subscriptions/check")}?email=${encodeURIComponent(user.email)}`,
         );
 
         if (res.data?.alreadySubscribed) {
@@ -49,10 +50,7 @@ export default function Newsletter() {
     setServerMessage("");
 
     try {
-      const res = await axios.post(
-        "http://192.168.1.7:5000/api/subscriptions",
-        { email },
-      );
+      const res = await axios.post(apiUrl("/subscriptions"), { email });
 
       const { alreadySubscribed, message } = res.data;
 

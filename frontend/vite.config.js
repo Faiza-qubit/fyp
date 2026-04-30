@@ -19,6 +19,12 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     https: true,       // basicSsl() will handle this
+    proxy: {
+      "/api": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+      },
+    },
   },
 
   preview: {
@@ -30,5 +36,6 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    cssMinify: false,
   },
 });

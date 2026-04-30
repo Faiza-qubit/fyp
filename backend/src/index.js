@@ -21,8 +21,19 @@ import adminRoutes from "./routes/adminRoutes.js";
 
 const app = express();
 
+const corsOrigins = (process.env.CORS_ORIGIN || process.env.FRONTEND_URL || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 // Middleware
-app.use(cors());
+app.use(
+  corsOrigins.length > 0
+    ? cors({
+        origin: corsOrigins,
+      })
+    : cors(),
+);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -43,9 +54,7 @@ app.use("/api/admin", adminRoutes);
 
 // Connect MongoDB
 mongoose
-  .connect(
-    "mongodb+srv://Anum:pascal12@sizewise.q8hgsem.mongodb.net/fyp"
-  )
+  .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("✅ MongoDB connected successfully");
   })

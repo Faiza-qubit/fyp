@@ -11,6 +11,14 @@ function getJwtSecret() {
   return secret;
 }
 
+function getJwtRefreshSecret() {
+  const secret = process.env.JWT_REFRESH_SECRET;
+  if (!secret) {
+    throw new Error("JWT_REFRESH_SECRET is not set in environment variables");
+  }
+  return secret;
+}
+
 // --------------------------- SIGNUP ---------------------------
 export const signup = async (req, res) => {
   try {
@@ -56,13 +64,13 @@ export const signup = async (req, res) => {
     // ✅ FIXED TOKENS
     const accessToken = jwt.sign(
       { userId: savedUser._id, email: savedUser.email },
-      process.env.JWT_SECRET,
+      getJwtSecret(),
       { expiresIn: "7d" }
     );
 
     const refreshToken = jwt.sign(
       { userId: savedUser._id },
-      process.env.JWT_REFRESH_SECRET,
+      getJwtRefreshSecret(),
       { expiresIn: "30d" }
     );
 
@@ -109,13 +117,13 @@ export const login = async (req, res) => {
     // ✅ NEW TOKEN SYSTEM
     const accessToken = jwt.sign(
       { userId: user._id, email: user.email },
-      process.env.JWT_SECRET,
+      getJwtSecret(),
       { expiresIn: "7d" }
     );
 
     const refreshToken = jwt.sign(
       { userId: user._id },
-      process.env.JWT_REFRESH_SECRET,
+      getJwtRefreshSecret(),
       { expiresIn: "30d" }
     );
 
@@ -146,11 +154,11 @@ export const refreshTokenHandler = (req, res) => {
   }
 
   try {
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const decoded = jwt.verify(refreshToken, getJwtRefreshSecret());
 
     const newAccessToken = jwt.sign(
       { userId: decoded.userId },
-      process.env.JWT_SECRET,
+      getJwtSecret(),
       { expiresIn: "7d" }
     );
 

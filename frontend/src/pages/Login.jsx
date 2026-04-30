@@ -8,8 +8,7 @@ import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useEffect } from "react";
-
-const API_BASE_URL = "http://192.168.1.7:5000/api"; // Update to your backend URL
+import { apiUrl } from "@/lib/api";
 
 function getApiErrorMessage(err, fallbackMessage) {
   if (err?.response?.data?.message) {
@@ -53,8 +52,8 @@ export default function Login({ setIsLoggedIn }) {
     try {
       // Determine backend endpoint
       const endpoint = isSignUp
-        ? `${API_BASE_URL}/signup`
-        : `${API_BASE_URL}/login`;
+        ? apiUrl("/signup")
+        : apiUrl("/login");
 
       // Send request to backend
       const response = await axios.post(

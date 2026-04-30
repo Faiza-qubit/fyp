@@ -9,6 +9,7 @@ import axios from "axios";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, MessageSquare, Send, Sparkles, Star } from "lucide-react";
 import { useState } from "react";
+import { apiUrl } from "@/lib/api";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 import { Input } from "../components/ui/input";
@@ -16,7 +17,6 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 
 const ratingLabels = ["Poor", "Fair", "Good", "Great", "Excellent"];
-const API_BASE_URL = "http://localhost:5000/api";
 
 
 export default function FeedbackForm() {
@@ -53,7 +53,7 @@ const handleSubmit = async (e) => {
 
   try {
     console.log("sending to backend");
-    const response = await axios.post(`${API_BASE_URL}/feedback`, {
+    const response = await axios.post(apiUrl("/feedback"), {
       userId,
       name,
       email,

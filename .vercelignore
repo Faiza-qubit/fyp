@@ -1,0 +1,11 @@
+backend/
+Foot-Detection-Model/
+tryon-measurement/
+node_modules/
+.git/
+.gitignore
+README.md
+LICENSE
+requirements.md
+FIX_NETWORK_ERROR.md
+STRIPE_SETUP.md

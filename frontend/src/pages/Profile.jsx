@@ -2,8 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { SHOES } from "@/lib/mockData";
 import axios from "axios";
 import { useLocation } from "wouter";
-
-const API_BASE_URL = "http://localhost:5000/api";
+import { apiUrl } from "@/lib/api";
 
 export default function Profile() {
   const token =
@@ -36,7 +35,7 @@ export default function Profile() {
 
     const loadProfile = async () => {
       try {
-        const meResponse = await axios.get(`${API_BASE_URL}/me`, {
+        const meResponse = await axios.get(apiUrl("/me"), {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -50,12 +49,9 @@ export default function Profile() {
           usSize: currentUser?.footProfile?.usSize || 0,
         });
 
-        const ordersResponse = await axios.get(
-          `${API_BASE_URL}/payments/my-orders`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
+        const ordersResponse = await axios.get(apiUrl("/payments/my-orders"), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         setOrders(ordersResponse.data || []);
       } catch (err) {
