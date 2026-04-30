@@ -4,7 +4,7 @@ import path from "path";
 
 export default defineConfig({
   plugins: [
-    react(),           // Keep this as default (fast esbuild + SWC)
+    react(),
   ],
 
   resolve: {
@@ -16,7 +16,7 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
-    https: true,       // basicSsl() will handle this
+    // https removed - not needed on Vercel
     proxy: {
       "/api": {
         target: "http://localhost:5000",
@@ -28,7 +28,7 @@ export default defineConfig({
   preview: {
     host: "0.0.0.0",
     port: 4173,
-    https: true,
+    // https removed
   },
 
   build: {
