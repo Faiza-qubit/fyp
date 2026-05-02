@@ -82,11 +82,6 @@ export default function AdminLogin() {
             >
               Access Dashboard
             </Button>
-
-            <p className="text-center text-xs text-gray-500 mt-6">
-              Hint: password is{" "}
-              <code className="text-yellow-400 font-mono">admin123</code>
-            </p>
           </form>
         </Card>
       </motion.div>
