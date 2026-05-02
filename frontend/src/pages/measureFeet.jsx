@@ -56,7 +56,7 @@ export default function FootMeasurement() {
 
   try {
     // CALL AI SERVER
-    const response = await fetch("http://192.168.1.7:8000/measure", {
+    const response = await fetch("https://muneebamir12-sizewise-measurement.hf.space/measure", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -78,7 +78,7 @@ export default function FootMeasurement() {
     try {
       const token = localStorage.getItem("token");
         await axios.put(
-      "http://192.168.1.3:5000/api/profile/foot-size",
+      "https://muneebamir12-sizewise-measurement.hf.space/api/profile/foot-size",
         {
           footLengthCm: data.length,
           footWidthCm: data.width,
